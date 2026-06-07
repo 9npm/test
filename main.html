@@ -126,7 +126,7 @@ html, body {
 .main-content {
   flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative;
 }
-.tab-panel { display: none; width: 100%; height: 100%; flex-direction: column; }
+.tab-panel { display: none; width: 100%; height: 100%; min-height: 0; flex-direction: column; }
 .tab-panel.active { display: flex; }
 
 /* HEADER BAR */
@@ -164,10 +164,10 @@ html, body {
 .friend-status.offline { color: var(--text3); }
 
 /* CHAT AREA & DMs */
-.chat-window { flex: 1; display: flex; flex-direction: column; background: rgba(11, 14, 23, 0.1); }
+.chat-window { flex: 1; min-height: 0; display: flex; flex-direction: column; background: rgba(11, 14, 23, 0.1); }
 .chat-welcome { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text3); }
 /* ── INSTAGRAM-STYLE CHAT ─────────────────────────── */
-.chat-messages { flex: 1; overflow-y: auto; padding: 16px 20px; display: flex; flex-direction: column; gap: 4px; }
+.chat-messages { flex: 1; min-height: 0; overflow-y: auto; padding: 16px 20px; display: flex; flex-direction: column; gap: 4px; }
 
 /* Row layout */
 .msg-row { display: flex; align-items: flex-end; gap: 8px; width: 100%; margin-bottom: 2px; }
