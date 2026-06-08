@@ -16,7 +16,7 @@
 }
 html, body {
   width: 100%; height: 100%; overflow: hidden; background: var(--bg); color: var(--text);
-  font-family: var(--font); position: fixed;
+  font-family: var(--font);
 }
 
 /* BG GRAPHICS */
@@ -36,15 +36,30 @@ html, body {
 
 /* MAIN MOBILE APP CONTAINER */
 .app-container {
-  display: flex; width: 100vw; height: 100%; z-index: 1; position: relative;
-  backdrop-filter: blur(10px); background: rgba(11, 14, 23, 0.4);
+  position: fixed;
+  inset: 0;
+  display: flex;
+  z-index: 1;
+  background: rgba(11, 14, 23, 0.4);
 }
 
 /* LEFT SIDEBAR: VERTICAL TABS (Discord Style) */
 .sidebar-tabs {
-  width: 65px; height: 100%; background: rgba(11, 14, 23, 0.95); border-right: 1px solid var(--border);
-  display: flex; flex-direction: column; align-items: center; padding: 20px 0; justify-content: space-between;
-  flex-shrink: 0; z-index: 10;
+  width: 65px;
+  flex-shrink: 0;
+  height: 100%;
+  background: rgba(11, 14, 23, 0.97);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: max(20px, env(safe-area-inset-top, 20px));
+  padding-bottom: max(16px, env(safe-area-inset-bottom, 16px));
+  justify-content: space-between;
+  z-index: 10;
+  /* Do NOT use overflow:hidden — it clips the active indicator bar */
+  overflow-y: auto;
+  overflow-x: visible;
 }
 .tabs-menu { display: flex; flex-direction: column; gap: 16px; align-items: center; width: 100%; }
 .tab-btn {
@@ -57,8 +72,17 @@ html, body {
   box-shadow: 0 4px 12px rgba(79, 142, 247, 0.15);
 }
 .tab-btn.active::before {
-  content: ''; position: absolute; left: -10px; top: 12px; bottom: 12px; width: 4px;
-  background: var(--accent); border-radius: 0 4px 4px 0;
+  content: '';
+  position: absolute;
+  /* Tab-btn is 44px wide, centered inside 65px sidebar.
+     Margin-left = (65-44)/2 = 10.5px. To reach the sidebar's left edge,
+     we go left: -11px (10.5px margin + 0.5px to be flush) */
+  left: -11px;
+  top: 10px;
+  bottom: 10px;
+  width: 3px;
+  background: var(--accent);
+  border-radius: 0 3px 3px 0;
 }
 .tab-profile { display: flex; flex-direction: column; align-items: center; gap: 14px; width: 100%; }
 .profile-avatar {
@@ -76,7 +100,13 @@ html, body {
 
 /* RIGHT PANEL: ACTIVE TAB WINDOW (occupies remaining width) */
 .active-tab-panel {
-  flex: 1; height: 100%; display: flex; flex-direction: column; overflow: hidden; position: relative;
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
   background: rgba(17, 21, 32, 0.4);
 }
 .tab-panel { display: none; width: 100%; height: 100%; min-height: 0; flex-direction: column; }
@@ -132,9 +162,17 @@ html, body {
 
 /* SLIDING OVERLAY PANEL (Instagram Chat Style on Mobile) */
 .mobile-overlay {
-  position: absolute; inset: 0; width: 100vw; height: 100%; z-index: 100;
-  background: var(--bg); display: flex; flex-direction: column; overflow: hidden;
-  transform: translateX(100%); transition: transform 0.24s cubic-bezier(0.1, 0.9, 0.2, 1);
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 100;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transform: translateX(100%);
+  transition: transform 0.24s cubic-bezier(0.1, 0.9, 0.2, 1);
+  /* Ensure it covers the full viewport including safe areas */
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 .mobile-overlay.active {
   transform: translateX(0);
@@ -1315,6 +1353,8 @@ async function sendDMMessage() {
   dmPendingFiles = [];
   renderAttachmentPreview('DM');
   input.value = '';
+  // Keep keyboard open on mobile after sending
+  input.focus();
 
   if (filesToProcess.length) {
     btn.textContent = '…';
@@ -1330,6 +1370,7 @@ async function sendDMMessage() {
     } catch(e) { showToast('Send failed: ' + e.message); }
     btn.textContent = '➤';
     btn.disabled = false;
+    input.focus();
   } else {
     db.collection('chats').doc(activeChatId).collection('messages').add({
       sender: localUsername,
@@ -1748,6 +1789,8 @@ async function sendLoungeMessage() {
   loungePendingFiles = [];
   renderAttachmentPreview('Lounge');
   input.value = '';
+  // Keep keyboard open on mobile after sending
+  input.focus();
 
   if (filesToProcess.length) {
     btn.textContent = '…';
@@ -1763,6 +1806,7 @@ async function sendLoungeMessage() {
     } catch(e) { showToast('Send failed'); }
     btn.textContent = '➤';
     btn.disabled = false;
+    input.focus();
   } else {
     db.collection('rooms').doc(loungeCode).collection('messages').add({
       sender: localUsername,
