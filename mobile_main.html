@@ -1,0 +1,2245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Together — Space (Mobile)</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0b0e17; --bg2: #111520; --surface: #1a2035; --surface2: #1f2840;
+  --border: rgba(255,255,255,0.07); --border2: rgba(255,255,255,0.12);
+  --accent: #4f8ef7; --accent2: #7b5ea7; --text: #e8ecf8;
+  --text2: #8892aa; --text3: #4a5468; --red: #ef4444; --green: #22c55e;
+  --font: 'Outfit', sans-serif; --radius: 14px; --radius-sm: 8px;
+}
+html, body {
+  width: 100%; height: 100%; overflow: hidden; background: var(--bg); color: var(--text);
+  font-family: var(--font); position: fixed;
+}
+
+/* BG GRAPHICS */
+.bg-canvas { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+.bg-orb { position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.15; animation: drift 20s ease-in-out infinite alternate; }
+.bg-orb:nth-child(1) { width: 400px; height: 400px; background: #4f8ef7; top: -150px; left: -100px; }
+.bg-orb:nth-child(2) { width: 350px; height: 350px; background: #7b5ea7; bottom: -100px; right: -80px; animation-delay: -7s; }
+@keyframes drift {
+  0% { transform: translate(0,0) scale(1); }
+  100% { transform: translate(20px,-20px) scale(1.03); }
+}
+.grid-lines {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background-image: linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+  background-size: 50px 50px;
+}
+
+/* MAIN MOBILE APP CONTAINER */
+.app-container {
+  display: flex; width: 100vw; height: 100%; z-index: 1; position: relative;
+  backdrop-filter: blur(10px); background: rgba(11, 14, 23, 0.4);
+}
+
+/* LEFT SIDEBAR: VERTICAL TABS (Discord Style) */
+.sidebar-tabs {
+  width: 65px; height: 100%; background: rgba(11, 14, 23, 0.95); border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; align-items: center; padding: 20px 0; justify-content: space-between;
+  flex-shrink: 0; z-index: 10;
+}
+.tabs-menu { display: flex; flex-direction: column; gap: 16px; align-items: center; width: 100%; }
+.tab-btn {
+  width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center;
+  font-size: 20px; color: var(--text2); cursor: pointer; transition: all 0.2s ease;
+  border: 1px solid transparent; background: transparent; position: relative;
+}
+.tab-btn.active {
+  background: rgba(79, 142, 247, 0.12); color: white; border-color: rgba(79, 142, 247, 0.25);
+  box-shadow: 0 4px 12px rgba(79, 142, 247, 0.15);
+}
+.tab-btn.active::before {
+  content: ''; position: absolute; left: -10px; top: 12px; bottom: 12px; width: 4px;
+  background: var(--accent); border-radius: 0 4px 4px 0;
+}
+.tab-profile { display: flex; flex-direction: column; align-items: center; gap: 14px; width: 100%; }
+.profile-avatar {
+  width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--accent2));
+  display: flex; align-items: center; justify-content: center; font-weight: 700; color: white;
+  font-size: 14px; cursor: pointer; position: relative; border: 1px solid var(--border2);
+}
+.profile-avatar.online::after {
+  content: ''; position: absolute; bottom: 0; right: 0; width: 8px; height: 8px;
+  background: var(--green); border-radius: 50%; border: 1.5px solid var(--bg);
+}
+.tab-logout-btn {
+  background: none; border: none; color: var(--text3); cursor: pointer; transition: color 0.2s;
+}
+
+/* RIGHT PANEL: ACTIVE TAB WINDOW (occupies remaining width) */
+.active-tab-panel {
+  flex: 1; height: 100%; display: flex; flex-direction: column; overflow: hidden; position: relative;
+  background: rgba(17, 21, 32, 0.4);
+}
+.tab-panel { display: none; width: 100%; height: 100%; min-height: 0; flex-direction: column; }
+.tab-panel.active { display: flex; }
+
+/* HEADERS */
+.tab-header {
+  height: 60px; border-bottom: 1px solid var(--border); display: flex; align-items: center;
+  justify-content: space-between; padding: 0 16px; background: rgba(17, 21, 32, 0.3);
+  flex-shrink: 0; z-index: 5;
+}
+.tab-title { font-size: 17px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+
+/* LIST VIEWS & LIST ITEMS */
+.sub-list { display: flex; flex-direction: column; padding: 12px 8px; gap: 6px; }
+.sub-item {
+  display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: var(--radius-sm);
+  cursor: pointer; transition: all 0.2s; border: 1px solid transparent; color: var(--text2);
+  text-decoration: none; font-size: 13.5px; font-weight: 500;
+}
+.sub-item:hover { background: rgba(255, 255, 255, 0.02); color: var(--text); }
+.sub-item.active { background: rgba(255, 255, 255, 0.04); border-color: var(--border); color: white; }
+.sub-item-avatar {
+  width: 28px; height: 28px; border-radius: 50%; background: var(--surface2);
+  display: flex; align-items: center; justify-content: center; font-weight: 700; color: white; font-size: 12px;
+  position: relative;
+}
+.sub-item-avatar.online::after {
+  content: ''; position: absolute; bottom: 0; right: 0; width: 8px; height: 8px;
+  background: var(--green); border-radius: 50%; border: 1.5px solid var(--bg);
+}
+.sub-item-status { font-size: 10px; margin-top: 2px; }
+.sub-item-status.online { color: var(--green); }
+.sub-item-status.offline { color: var(--text3); }
+
+/* FRIENDS DASHBOARD PANEL */
+.friends-container { padding: 16px; flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; }
+.friends-grid { display: flex; flex-direction: column; gap: 8px; }
+.friend-card {
+  background: rgba(26, 32, 53, 0.5); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 10px 14px; display: flex; align-items: center; justify-content: space-between;
+}
+.friend-details { display: flex; flex-direction: column; }
+.friend-name { font-weight: 600; font-size: 14px; }
+.friend-username { font-size: 11px; color: var(--text3); }
+.friend-status { font-size: 10px; margin-top: 2px; }
+.friend-status.online { color: var(--green); }
+.friend-status.offline { color: var(--text3); }
+.right-sec-title {
+  font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 1px;
+  font-weight: 600; margin-bottom: 8px;
+}
+
+/* SLIDING OVERLAY PANEL (Instagram Chat Style on Mobile) */
+.mobile-overlay {
+  position: absolute; inset: 0; width: 100vw; height: 100%; z-index: 100;
+  background: var(--bg); display: flex; flex-direction: column; overflow: hidden;
+  transform: translateX(100%); transition: transform 0.24s cubic-bezier(0.1, 0.9, 0.2, 1);
+}
+.mobile-overlay.active {
+  transform: translateX(0);
+}
+
+/* CHAT WINDOW OVERLAY INNER */
+.chat-window { flex: 1; min-height: 0; display: flex; flex-direction: column; background: rgba(11, 14, 23, 0.1); }
+.chat-welcome { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text3); }
+.chat-messages { flex: 1; min-height: 0; overflow-y: auto; padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; }
+
+/* INSTAGRAM STYLE MESSAGE BUBBLES */
+.msg-row { display: flex; align-items: flex-end; gap: 8px; width: 100%; margin-bottom: 2px; }
+.msg-row.sent { flex-direction: row-reverse; }
+.msg-row.recv { flex-direction: row; }
+.msg-avatar { width: 24px; height: 24px; border-radius: 50%; background: var(--accent); color: white;
+  font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; cursor: pointer; align-self: flex-end; margin-bottom: 2px; }
+.msg-row.sent .msg-avatar { display: none; }
+.msg-group { display: flex; flex-direction: column; gap: 2px; max-width: 80%; }
+.msg-row.sent .msg-group { align-items: flex-end; }
+.msg-row.recv .msg-group { align-items: flex-start; }
+.msg-bubble {
+  padding: 8px 12px; font-size: 13.5px; line-height: 1.45;
+  word-break: break-word; max-width: 100%; position: relative;
+  border-radius: 18px;
+}
+.msg-row.sent .msg-bubble {
+  background: var(--accent); color: #fff; border-bottom-right-radius: 4px;
+}
+.msg-row.recv .msg-bubble {
+  background: rgba(255,255,255,0.1); color: var(--text); border-bottom-left-radius: 4px;
+}
+.msg-sender { font-size: 10.5px; color: var(--text3); margin-bottom: 3px; font-weight: 600; padding: 0 2px; }
+.msg-time { display: none !important; }
+
+/* Group Separator */
+.chat-time-separator {
+  text-align: center; font-size: 10.5px; color: var(--text3);
+  margin: 16px 0 8px 0; font-weight: 500; width: 100%; clear: both;
+}
+
+/* Chat inputs */
+.chat-input-wrapper {
+  display: flex; flex-direction: column; background: rgba(17,21,32,0.4);
+  border-top: 1px solid var(--border); padding: 8px 12px; flex-shrink: 0;
+}
+.chat-input-area { display: flex; gap: 6px; align-items: center; border-top: none; padding: 0; }
+.chat-input {
+  flex: 1; background: rgba(255,255,255,0.07); border: 1.5px solid rgba(255,255,255,0.1); border-radius: 22px;
+  padding: 8px 14px; color: var(--text); outline: none; font-family: var(--font); font-size: 13px;
+  transition: border-color 0.2s;
+}
+.chat-input:focus { border-color: var(--accent); background: rgba(255,255,255,0.09); }
+.attachment-btn { font-size: 18px; color: var(--text2); cursor: pointer; background: none; border: none; padding: 4px; transition: color 0.15s; flex-shrink: 0; }
+.attachment-btn:hover { color: var(--accent); }
+#chatSendBtn, #loungeSendBtn {
+  width: 32px; height: 32px; border-radius: 50%; padding: 0; display: flex; align-items: center; justify-content: center;
+  font-size: 14px; flex-shrink: 0;
+}
+
+/* Previews & file items */
+.attachment-preview { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 6px; border-bottom: 1px solid rgba(255,255,255,0.07); }
+.attachment-preview-item { position: relative; width: 52px; height: 52px; border-radius: 8px; overflow: hidden; background: rgba(255,255,255,0.06); flex-shrink: 0; border: 1.5px solid rgba(255,255,255,0.1); }
+.attachment-preview-item img { width: 100%; height: 100%; object-fit: cover; }
+.attachment-preview-item .file-icon { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; font-size: 20px; }
+.attachment-preview-remove { position: absolute; top: 1px; right: 1px; background: rgba(0,0,0,0.7); color: white; border: none; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+
+/* MSG ATTACHMENT GRIDS */
+.msg-attachments-container { display: flex; flex-direction: column; gap: 3px; }
+.msg-img-grid { display: grid; gap: 3px; border-radius: 12px; overflow: hidden; max-width: 260px; }
+.msg-img-grid.grid-1 { grid-template-columns: 1fr; }
+.msg-img-grid.grid-2 { grid-template-columns: 1fr 1fr; }
+.msg-img-grid.grid-3 { grid-template-columns: 1fr 1fr; }
+.msg-img-grid.grid-3 img:first-child { grid-column: span 2; }
+.msg-img-grid.grid-4 { grid-template-columns: 1fr 1fr; }
+.msg-img-grid.grid-many { grid-template-columns: repeat(3, 1fr); }
+.msg-img-grid img { width: 100%; height: 150px; object-fit: cover; cursor: pointer; background: #111; display: block; }
+.msg-img-grid.grid-1 img { height: auto; max-height: 280px; }
+.msg-file-card { display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.07); padding: 8px 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); text-decoration: none; color: var(--text); max-width: 240px; }
+.msg-file-icon { font-size: 22px; flex-shrink: 0; }
+.msg-file-info { display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+.msg-file-name { font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.msg-file-size { font-size: 10px; color: rgba(255,255,255,0.5); margin-top: 1px; }
+
+/* LIGHTBOX */
+.img-lightbox { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 9999; display: none; align-items: center; justify-content: center; }
+.img-lightbox.open { display: flex; }
+.img-lightbox img { max-width: 95vw; max-height: 85vh; object-fit: contain; }
+.img-lightbox-close { position: absolute; top: 16px; right: 20px; font-size: 28px; color: white; background: none; border: none; }
+
+/* DISCORD-STYLE CALL OVERLAY */
+.call-overlay {
+  position: absolute; inset: 0; background: rgba(11, 14, 23, 0.97);
+  z-index: 20; display: none; flex-direction: column; align-items: center;
+  justify-content: center; padding: 20px;
+}
+.call-overlay.active { display: flex; }
+.video-grid {
+  display: grid; grid-template-columns: 1fr; gap: 12px; width: 100%;
+  flex: 1; min-height: 0; position: relative;
+}
+.video-grid.two-streams { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; }
+.video-container {
+  position: relative; border-radius: var(--radius); overflow: hidden;
+  background: var(--bg2); border: 1px solid var(--border); display: flex;
+  align-items: center; justify-content: center;
+}
+.video-container video { width: 100%; height: 100%; object-fit: contain; background: #000; }
+.video-label { position: absolute; bottom: 8px; left: 8px; z-index: 5; background: rgba(0,0,0,0.6); padding: 2px 8px; border-radius: 4px; font-size: 10px; color: #fff; }
+.floating-local-video {
+  position: absolute; top: 10px; right: 10px; width: 95px; height: 65px;
+  border-radius: var(--radius-sm); overflow: hidden; border: 2px solid var(--accent);
+  z-index: 25; background: #000; box-shadow: 0 4px 16px rgba(0,0,0,0.6);
+}
+.floating-local-video video { width: 100%; height: 100%; object-fit: cover; }
+.call-controls-bar { display: flex; gap: 10px; margin-top: 16px; justify-content: center; align-items: center; z-index: 21; }
+.call-avatar-placeholder { font-size: 32px; font-weight: 700; color: white; width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--accent2)); display: flex; align-items: center; justify-content: center; }
+
+/* MODALS & OVERLAYS */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(11, 14, 23, 0.85); z-index: 200;
+  display: none; align-items: center; justify-content: center; backdrop-filter: blur(8px);
+}
+.modal-overlay.active { display: flex; }
+.modal-card {
+  background: var(--surface); border: 1px solid var(--border2); border-radius: var(--radius);
+  padding: 20px; width: 88%; max-width: 320px;
+}
+.modal-title { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+.modal-desc { font-size: 12px; color: var(--text2); margin-bottom: 12px; }
+.modal-input {
+  width: 100%; background: var(--bg2); border: 1px solid var(--border2); border-radius: var(--radius-sm);
+  padding: 8px; color: var(--text); outline: none; margin-bottom: 12px; font-family: var(--font); font-size: 13px;
+}
+.modal-buttons { display: flex; justify-content: flex-end; gap: 8px; }
+
+/* TOAST / NOTIFICATION */
+.toast-msg {
+  position: fixed; bottom: 20px; left: 20px; right: 20px; background: var(--surface2); border: 1.5px solid var(--border2);
+  border-radius: var(--radius); padding: 10px 16px; font-size: 12px; opacity: 0; pointer-events: none;
+  transform: translateY(10px); transition: all 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28); z-index: 300;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5); display: flex; align-items: center; gap: 8px;
+}
+.toast-msg.active { opacity: 1; transform: translateY(0); pointer-events: auto; }
+.req-toast {
+  position: fixed; top: 16px; left: 16px; right: 16px; background: var(--surface); border: 2px solid var(--accent); border-radius: var(--radius);
+  padding: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.6); display: none; align-items: center; gap: 12px; z-index: 210; opacity: 0; transition: all 0.3s ease;
+}
+.req-toast.active { display: flex; opacity: 1; transform: translateY(0); }
+
+/* BUTTONS & ICONS */
+.btn-primary {
+  background: linear-gradient(135deg, var(--accent), var(--accent2)); color: white; border: none;
+  padding: 6px 12px; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer; font-size: 12px;
+}
+.btn-primary:disabled { opacity: 0.55; }
+.btn-text { background: none; border: none; color: var(--text2); font-weight: 600; cursor: pointer; padding: 6px; font-size: 12px; }
+.btn-icon {
+  width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--border2); background: var(--bg2);
+  color: var(--text2); display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 13px;
+}
+.btn-icon.active { background: var(--accent); color: white; }
+.btn-icon.decline { border-color: rgba(239, 68, 68, 0.2); color: var(--red); background: rgba(239, 68, 68, 0.05); }
+
+/* PROFILE CARD */
+.profile-card-overlay {
+  position: fixed; inset: 0; z-index: 500; display: none; align-items: center; justify-content: center; padding: 16px; pointer-events: none;
+}
+.profile-card-overlay.active { display: flex; pointer-events: auto; }
+.profile-card {
+  --card-primary: #4f8ef7; --card-accent: #7b5ea7;
+  width: 100%; max-width: 310px; border-radius: 18px; background: #18192b; border: 1px solid rgba(255,255,255,0.10); box-shadow: 0 24px 60px rgba(0,0,0,0.7); overflow: hidden; position: relative;
+}
+.pc-banner { height: 80px; background: linear-gradient(135deg, var(--card-primary), var(--card-accent)); position: relative; overflow: hidden; }
+.pc-banner:not(.readonly):hover::after { content: '🖼 Change'; position: absolute; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; color: white; font-size: 11px; }
+.pc-banner img { width: 100%; height: 100%; object-fit: cover; }
+.pc-avatar-wrap { position: absolute; left: 16px; top: 40px; width: 64px; height: 64px; border-radius: 50%; border: 3px solid #18192b; background: #18192b; cursor: pointer; overflow: hidden; z-index: 2; }
+.pc-avatar-img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+.pc-avatar-text { width: 100%; height: 100%; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 700; color: white; background: linear-gradient(135deg, var(--card-primary), var(--card-accent)); }
+.pc-avatar-wrap .pc-status-dot { position: absolute; bottom: 2px; right: 2px; width: 12px; height: 12px; border-radius: 50%; border: 2px solid #18192b; z-index: 4; background: var(--green); }
+.pc-body { padding: 32px 14px 14px; }
+.pc-name-row { display: flex; align-items: center; gap: 6px; margin-bottom: 2px; }
+.pc-display-name { font-size: 16px; font-weight: 700; color: #fff; outline: none; background: transparent; border: none; font-family: var(--font); padding: 0; max-width: 150px; }
+.pc-username { font-size: 12px; color: var(--text3); margin-bottom: 4px; }
+.pc-pronouns { font-size: 11px; color: var(--text3); margin-bottom: 8px; outline: none; background: transparent; border: none; font-family: var(--font); padding: 0; }
+.pc-divider { border: none; border-top: 1px solid rgba(255,255,255,0.07); margin: 8px 0; }
+.pc-section-label { font-size: 9px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--text3); margin-bottom: 4px; }
+.pc-about { font-size: 12px; color: var(--text2); line-height: 1.5; outline: none; background: transparent; border: 1px solid transparent; border-radius: 6px; padding: 4px; width: 100%; resize: none; font-family: var(--font); min-height: 40px; }
+.pc-badges { display: flex; gap: 4px; flex-wrap: wrap; }
+.pc-badge { width: 18px; height: 18px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 12px; background: rgba(255,255,255,0.06); }
+.pc-colors-row { display: flex; gap: 8px; }
+.pc-color-picker-wrap { display: flex; align-items: center; gap: 4px; font-size: 10px; color: var(--text3); }
+.pc-color-picker { width: 20px; height: 20px; border: none; padding: 0; cursor: pointer; background: transparent; }
+.pc-actions { display: flex; flex-direction: column; margin-top: 8px; gap: 2px; }
+.pc-action-row { display: flex; align-items: center; gap: 8px; padding: 8px; border-radius: 6px; cursor: pointer; font-size: 12px; color: var(--text2); }
+.pc-action-row:hover { background: rgba(255,255,255,0.05); }
+.pc-action-row.danger:hover { background: rgba(239,68,68,0.08); color: var(--red); }
+.pc-save-pill { position: absolute; top: 6px; right: 6px; background: var(--card-accent); color: white; font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 20px; opacity: 0; transition: all 0.25s; z-index: 10; }
+.pc-save-pill.show { opacity: 1; }
+
+/* UTILS */
+.divider { border: none; border-top: 1px solid var(--border); margin: 6px 0; }
+.hidden { display: none !important; }
+.scroll-thin::-webkit-scrollbar { width: 3px; height: 3px; }
+.scroll-thin::-webkit-scrollbar-track { background: transparent; }
+.scroll-thin::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.06); border-radius: 10px; }
+</style>
+</head>
+<body>
+
+<div class="bg-canvas">
+  <div class="bg-orb"></div>
+  <div class="bg-orb"></div>
+</div>
+<div class="grid-lines"></div>
+
+<div class="app-container" id="appContainer">
+  <!-- LEFT COLUMN: VERTICAL TABS SIDEBAR (65px) -->
+  <aside class="sidebar-tabs">
+    <div class="tabs-menu">
+      <button class="tab-btn active" id="btnTabFriends" onclick="showTab('friends')" title="Friends Dashboard">👥</button>
+      <button class="tab-btn" id="btnTabChats" onclick="showTab('chats')" title="DMs List">💬</button>
+      <button class="tab-btn" id="btnTabSpace" onclick="showTab('space')" title="Together Lounge">🔗</button>
+    </div>
+    <div class="tab-profile">
+      <div class="profile-avatar online" id="localAvatar" title="My Profile" onclick="toggleProfileCard()">?</div>
+      <button class="tab-logout-btn" onclick="logout()" title="Logout">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      </button>
+    </div>
+  </aside>
+
+  <!-- RIGHT COLUMN: ACTIVE TAB CONTENT PANEL -->
+  <main class="active-tab-panel">
+    
+    <!-- TAB 1: FRIENDS PANEL -->
+    <div class="tab-panel active" id="panelFriends">
+      <header class="tab-header">
+        <div class="tab-title">👥 Friends</div>
+        <button class="btn-primary" onclick="openAddFriendModal()">+ Add Friend</button>
+      </header>
+      <div class="friends-container scroll-thin">
+        <div id="pendingRequestsHeader" class="right-sec-title" style="display:none;">Friend Requests</div>
+        <div class="friends-grid" id="pendingRequestsList" style="margin-bottom: 16px;"></div>
+        
+        <div class="right-sec-title">All Friends</div>
+        <div class="friends-grid" id="activeFriendsList"></div>
+      </div>
+    </div>
+
+    <!-- TAB 2: DMS CHAT PANEL -->
+    <div class="tab-panel" id="panelChats">
+      <header class="tab-header">
+        <div class="tab-title">💬 Direct Messages</div>
+      </header>
+      <div class="sub-list scroll-thin" id="subListContent" style="flex:1; overflow-y:auto;">
+        <!-- DMs List -->
+      </div>
+    </div>
+
+    <!-- TAB 3: TOGETHER SPACE / LOUNGE WORKSPACE -->
+    <div class="tab-panel" id="panelSpace">
+      <!-- 1. Not Joined Room View -->
+      <div class="chat-window" id="loungeLandingScreen" style="justify-content:center; align-items:center;">
+        <div class="modal-card" style="width:100%; max-width:280px; box-shadow:none; background:transparent; border:none; padding:0;">
+          <div class="modal-title" style="text-align:center; font-size:18px; font-weight:700;">Together Lounge ✦</div>
+          <div class="modal-desc" style="text-align:center; margin-bottom:20px;">Create a private lounge or enter a room code to join.</div>
+          
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px;">
+            <button class="btn-primary" onclick="setupLoungeRoom('create')">Create Lounge</button>
+            <button class="btn-primary" onclick="document.getElementById('loungeJoinBox').classList.toggle('hidden'); document.getElementById('loungeJoinInput').focus();" style="background:var(--surface2); border:1px solid var(--border2); color:var(--text);">Join Lounge</button>
+          </div>
+
+          <div id="loungeJoinBox" class="hidden">
+            <input type="text" class="modal-input" id="loungeJoinInput" placeholder="Enter 6-digit code" maxlength="6" style="text-align:center; font-size:15px; font-family:var(--mono); letter-spacing:2px; text-transform:uppercase;" onkeydown="if(event.key==='Enter') setupLoungeRoom('join')">
+            <button class="btn-primary" style="width:100%;" onclick="setupLoungeRoom('join')">Enter Room →</button>
+          </div>
+
+          <div id="loungeCreateBox" class="hidden" style="margin-top:14px; padding:14px; background:var(--bg2); border:1px dashed var(--border2); border-radius:var(--radius-sm); text-align:center; cursor:pointer;" onclick="copyLoungeCode()" title="Click to copy code">
+            <div style="font-size:20px; font-weight:700; color:var(--accent); font-family:var(--mono); letter-spacing:3px;" id="loungeGeneratedCode">------</div>
+            <div style="font-size:10px; color:var(--text3); margin-top:4px;">Click code to copy · Share with your partner</div>
+          </div>
+          <div id="loungeLandingMsg" style="margin-top:10px; font-size:12px; text-align:center; color:var(--red);"></div>
+        </div>
+      </div>
+
+      <!-- 2. Inside Room Active Lounge Sidebar View -->
+      <div class="hidden" id="loungeActiveWorkspaceSidebar" style="display:flex; flex:1; flex-direction:column; overflow:hidden;">
+        <div style="display:flex; flex-direction:column; justify-content:center; gap:2px; height:60px; padding:0 16px; border-bottom:1px solid var(--border);">
+          <div style="font-weight:600; font-size:14px;" id="loungeSubTitle">Lounge Space</div>
+          <div style="font-size:10px; color:var(--accent);" id="loungeCodeSub">Code: ------</div>
+        </div>
+        <div class="sub-list" id="loungeSubList" style="padding:12px 8px; display:flex; flex-direction:column; gap:6px; flex-shrink:0;">
+          <div class="sub-item" onclick="openMobileOverlay('lounge-chat')">💬 Room Chat</div>
+          <div class="sub-item" onclick="openMobileOverlay('lounge-voice')">🎙️ Voice Call</div>
+          <div class="sub-item" onclick="openMobileOverlay('lounge-screen')">🖥️ Screen Share</div>
+        </div>
+        
+        <!-- Members list inside Room Sidebar -->
+        <div style="padding:12px 16px 4px 16px; font-size:11px; color:var(--text3); text-transform:uppercase; letter-spacing:1px; font-weight:600;" id="loungeMembersHeader">Room Members (0)</div>
+        <div class="sub-list scroll-thin" id="loungeMembersList" style="flex:1; overflow-y:auto; padding:0 8px;">
+          <!-- Lounge members show here -->
+        </div>
+
+        <div style="padding:12px 16px; border-top:1px solid var(--border);">
+          <button class="btn-primary btn-lounge-leave" onclick="exitLoungeWorkspace()" style="width:100%; padding:10px;">Leave Room</button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- DM CHAT OVERLAY -->
+<div class="mobile-overlay" id="chatActiveScreen">
+  <header class="tab-header">
+    <div style="display:flex; align-items:center; gap:10px; min-width:0;">
+      <button class="btn-icon" onclick="goBackToSubSidebar()" title="Back">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+      </button>
+      <div style="display:flex; flex-direction:column; min-width:0;">
+        <span class="friend-name" id="chatActiveUser" style="font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Username</span>
+        <span id="chatActiveStatus" class="sub-item-status offline">Offline</span>
+      </div>
+    </div>
+    <!-- Call icons -->
+    <div style="display:flex; gap:8px; flex-shrink:0;">
+      <button class="btn-icon" onclick="initiateCall('voice')" title="Voice Call">📞</button>
+      <button class="btn-icon" onclick="initiateCall('video')" title="Video Call">📹</button>
+    </div>
+  </header>
+
+  <div class="chat-messages scroll-thin" id="chatMessagesArea"></div>
+
+  <div class="chat-input-wrapper">
+    <div class="attachment-preview" id="chatAttachmentPreview" style="display:none;"></div>
+    <div class="chat-input-area">
+      <input type="text" class="chat-input" id="chatInputMessage" placeholder="Type a message..." onkeydown="if(event.key==='Enter') sendDMMessage()">
+      <button class="attachment-btn" onclick="document.getElementById('chatAttachmentInput').click()" title="Attach File">📎</button>
+      <button class="btn-primary" id="chatSendBtn" onclick="sendDMMessage()">➤</button>
+      <input type="file" multiple id="chatAttachmentInput" style="display:none;" onchange="handleAttachmentSelect(event, 'DM')">
+    </div>
+  </div>
+
+  <!-- DISCORD-STYLE CALL OVERLAY IN CHAT OVERLAY -->
+  <div class="call-overlay" id="callOverlay">
+    <div class="floating-local-video" id="floatingLocalVideoContainer" style="display:none;">
+      <video id="localVideoPlayer" autoplay muted playsinline></video>
+    </div>
+    
+    <div class="video-grid" id="remoteVideoGrid">
+      <div class="video-container" id="remoteStreamContainer">
+        <div class="call-avatar-placeholder" id="remoteCallAvatar">?</div>
+        <video id="remoteVideoPlayer" autoplay playsinline class="hidden" style="width:100%; height:100%;"></video>
+        <div class="video-label" id="remoteVideoLabel">Calling...</div>
+      </div>
+    </div>
+
+    <div class="call-controls-bar">
+      <button class="btn-icon" id="btnCallMute" onclick="toggleCallMute()" title="Mute Microphone">🎤</button>
+      <button class="btn-icon" id="btnCallCam" onclick="toggleCallCam()" title="Toggle Camera" style="display:none;">📹</button>
+      <button class="btn-icon" id="btnCallShare" onclick="toggleCallScreenShare()" title="Share Screen" style="display:none;">🖥️</button>
+      <button class="btn-icon decline" onclick="endCurrentCall()" title="End Call">📵</button>
+    </div>
+  </div>
+</div>
+
+<!-- LOUNGE OVERLAY (Lounge panels: Chat, Voice, Screen Share) -->
+<div class="mobile-overlay" id="loungeActiveWorkspace">
+  <!-- Lounge Chat Panel -->
+  <div class="tab-panel active" id="loungePanel-chat">
+    <header class="tab-header">
+      <div class="tab-title" style="display:flex; align-items:center; gap:8px;">
+        <button class="btn-icon" onclick="goBackToSubSidebar()" title="Back">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        </button>
+        <span>💬 Lounge Chat</span>
+      </div>
+    </header>
+    <div class="chat-messages scroll-thin" id="loungeMessagesArea"></div>
+    <div class="chat-input-wrapper">
+      <div class="attachment-preview" id="loungeAttachmentPreview" style="display:none;"></div>
+      <div class="chat-input-area">
+        <input type="text" class="chat-input" id="loungeInputMessage" placeholder="Type a message to Lounge..." onkeydown="if(event.key==='Enter') sendLoungeMessage()">
+        <button class="attachment-btn" onclick="document.getElementById('loungeAttachmentInput').click()" title="Attach File">📎</button>
+        <button class="btn-primary" id="loungeSendBtn" onclick="sendLoungeMessage()">➤</button>
+        <input type="file" multiple id="loungeAttachmentInput" style="display:none;" onchange="handleAttachmentSelect(event, 'Lounge')">
+      </div>
+    </div>
+  </div>
+
+  <!-- Lounge Voice Panel -->
+  <div class="tab-panel" id="loungePanel-voice">
+    <header class="tab-header">
+      <div class="tab-title" style="display:flex; align-items:center; gap:8px;">
+        <button class="btn-icon" onclick="goBackToSubSidebar()" title="Back">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        </button>
+        <span>🎙️ Voice Call</span>
+      </div>
+    </header>
+    <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px;">
+      <div class="chat-welcome" style="max-width:320px; text-align:center;">
+        <div class="call-avatar-placeholder" id="loungeVoiceIcon" style="font-size:36px; width:80px; height:80px; margin:0 auto 16px;">🎙️</div>
+        <div style="font-size:16px; font-weight:600;" id="loungeVoiceStatus">Lounge Voice Channel</div>
+        <div style="font-size:12px; color:var(--text3); margin-top:6px; line-height:1.5;">Connect audio call with whoever is present in the lounge.</div>
+        <div style="margin-top:20px; display:flex; gap:10px; width:100%;">
+          <button class="btn-primary" id="btnJoinLoungeCall" onclick="joinLoungeVoiceCall()" style="width:100%;">Connect Call</button>
+          <button class="btn-primary btn-lounge-leave hidden" id="btnLeaveLoungeCall" onclick="leaveLoungeVoiceCall()" style="width:100%;">Disconnect</button>
+        </div>
+        <div style="margin-top:16px; display:none;" id="loungeVoiceCtrls">
+          <button class="btn-icon" id="btnLoungeVoiceMute" onclick="toggleLoungeVoiceMute()" title="Mute Mic">🎤</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lounge Screen Panel -->
+  <div class="tab-panel" id="loungePanel-screen">
+    <header class="tab-header">
+      <div class="tab-title" style="display:flex; align-items:center; gap:8px; min-width:0;">
+        <button class="btn-icon" onclick="goBackToSubSidebar()" title="Back">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        </button>
+        <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">🖥️ Screen Share</span>
+      </div>
+      <button class="btn-primary" id="btnLoungeShare" onclick="toggleLoungeScreenShare()" style="flex-shrink:0;">Share Screen</button>
+    </header>
+    <div style="flex:1; margin:16px; background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius); display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden;">
+      <div class="chat-welcome" id="loungeScreenPlaceholder">
+        <span style="font-size:32px;">🖥️</span>
+        <p style="margin-top:8px; font-size:12px;">Waiting for a broadcast stream...</p>
+      </div>
+      <video id="loungeScreenPlayer" autoplay playsinline style="width:100%; height:100%; object-fit:contain; display:none; background:#000;"></video>
+      <div class="video-label hidden" id="loungeScreenLabel">Partner's Screen</div>
+    </div>
+  </div>
+</div>
+
+<!-- PROFILE CARD -->
+<div class="profile-card-overlay" id="profileCardOverlay" onclick="handleProfileCardOutsideClick(event)">
+  <div class="profile-card" id="profileCard">
+    <div class="pc-banner" id="pcBanner" onclick="document.getElementById('pcBannerInput').click()" title="Click to change banner">
+      <img id="pcBannerImg" src="" alt="" style="display:none;">
+    </div>
+    <input type="file" id="pcBannerInput" accept="image/*,image/gif" onchange="handleBannerUpload(event)">
+    <input type="file" id="pcAvatarInput" accept="image/*,image/gif" onchange="handleAvatarUpload(event)">
+    <div class="pc-save-pill" id="pcSavePill">✓ Saved</div>
+    <div class="pc-avatar-wrap" id="pcAvatarWrap" onclick="document.getElementById('pcAvatarInput').click()" title="Click to change avatar">
+      <div class="pc-avatar-text" id="pcAvatarText">?</div>
+      <img class="pc-avatar-img" id="pcAvatarImg" src="" alt="" style="display:none;">
+      <div class="pc-status-dot"></div>
+    </div>
+    <div class="pc-body">
+      <div class="pc-name-row">
+        <input class="pc-display-name" id="pcDisplayName" type="text" placeholder="Display Name" maxlength="32" oninput="scheduleProfileSave()" title="Display name">
+        <span style="font-size:16px;" title="Verified Member">✦</span>
+      </div>
+      <div class="pc-username" id="pcUsername">@username</div>
+      <input class="pc-pronouns" id="pcPronouns" type="text" placeholder="Add pronouns..." maxlength="24" oninput="scheduleProfileSave()" title="Pronouns">
+      <div class="pc-badges" id="pcBadges">
+        <div class="pc-badge" title="Early Member">🌟</div>
+        <div class="pc-badge" title="Active Chatter">💬</div>
+      </div>
+      <hr class="pc-divider">
+      <div class="pc-section-label">About Me</div>
+      <textarea class="pc-about" id="pcAbout" placeholder="Tell everyone a little bit about yourself..." maxlength="190" rows="3" oninput="scheduleProfileSave()"></textarea>
+      <div id="pcColorsSection">
+        <hr class="pc-divider">
+        <div class="pc-section-label">Theme Colors</div>
+        <div class="pc-colors-row">
+          <label class="pc-color-picker-wrap">
+            <input type="color" class="pc-color-picker" id="pcPrimaryColor" value="#4f8ef7" oninput="updateCardThemeLive()" onchange="scheduleProfileSave()">
+            Primary
+          </label>
+          <label class="pc-color-picker-wrap">
+            <input type="color" class="pc-color-picker" id="pcAccentColor" value="#7b5ea7" oninput="updateCardThemeLive()" onchange="scheduleProfileSave()">
+            Accent
+          </label>
+        </div>
+      </div>
+      <hr class="pc-divider">
+      <div class="pc-actions">
+        <div class="pc-action-row" id="pcActionAddFriend" style="display:none;" onclick="openAddFriendModal()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          Find Friends
+        </div>
+        <div class="pc-action-row" onclick="copyProfileUserId()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy User ID
+        </div>
+        <div class="pc-action-row danger" id="pcActionLogout" onclick="logout()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          Log Out
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- LOGOUT CONFIRM MODAL -->
+<div class="modal-overlay" id="logoutConfirmModal">
+  <div class="modal-card" style="width:280px; text-align:center;">
+    <div class="modal-title" style="color:var(--red);">Log Out?</div>
+    <div class="modal-desc">Are you sure you want to log out?</div>
+    <div class="modal-buttons" style="margin-top:16px; justify-content:center; gap:10px;">
+      <button class="btn-text" onclick="document.getElementById('logoutConfirmModal').classList.remove('active')">Cancel</button>
+      <button class="btn-primary" style="background:var(--red); border-color:var(--red); color:white;" onclick="executeLogout()">Log Out</button>
+    </div>
+  </div>
+</div>
+
+<!-- IMAGE LIGHTBOX -->
+<div class="img-lightbox" id="imgLightbox" onclick="closeLightbox()">
+  <button class="img-lightbox-close" onclick="closeLightbox()">✕</button>
+  <img src="" id="lightboxImg" alt="" onclick="event.stopPropagation()" />
+</div>
+
+<!-- ADD FRIEND MODAL -->
+<div class="modal-overlay" id="addFriendModal">
+  <div class="modal-card">
+    <div class="modal-title">Add a Friend</div>
+    <div class="modal-desc">Enter your friend's unique username below.</div>
+    <input type="text" class="modal-input" id="addFriendUsernameInput" placeholder="Friend's username">
+    <div class="modal-buttons">
+      <button class="btn-text" onclick="closeAddFriendModal()">Cancel</button>
+      <button class="btn-primary" onclick="sendFriendRequest()">Send Request</button>
+    </div>
+    <div id="addFriendModalMsg" style="margin-top:10px; font-size:12px; text-align:center;"></div>
+  </div>
+</div>
+
+<!-- INCOMING CALL REQUEST TOAST -->
+<div class="req-toast" id="incomingCallToast">
+  <div class="profile-avatar" id="toastCallerAvatar">?</div>
+  <div style="flex:1;">
+    <div style="font-weight:600; font-size:13px;" id="toastCallerName">Friend</div>
+    <div style="font-size:11px; color:var(--text2);" id="toastCallType">Incoming Call...</div>
+  </div>
+  <div style="display:flex; gap:8px;">
+    <button class="btn-icon decline" onclick="declineIncomingCall()"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91z"/></svg></button>
+    <button class="btn-icon" onclick="acceptIncomingCall()" style="border-color:var(--green); color:var(--green); background:rgba(34,197,94,0.05);"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></button>
+  </div>
+</div>
+
+<audio id="remoteAudioPlayer" autoplay></audio>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+
+<script>
+// ── Firebase Configuration ────────────────────────────
+const firebaseConfig = {
+  apiKey:            "AIzaSyAM6Eva0r9c8T0PJ7BjMKZcA1bUh2SKQb4",
+  authDomain:        "together-app-b09fd.firebaseapp.com",
+  projectId:         "together-app-b09fd",
+  storageBucket:     "together-app-b09fd.firebasestorage.app",
+  messagingSenderId: "207189978772",
+  appId:             "1:207189978772:web:8b2ee7a8449ad67a4ece81"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const storage = firebase.storage();
+
+// ── Auth Guard ────────────────────────────────────────
+const sessionUser = JSON.parse(sessionStorage.getItem('together_user'));
+if (!sessionUser) {
+  window.location.href = 'index.html';
+}
+const localUsername = sessionUser.username;
+const localDisplayName = sessionUser.displayName || localUsername;
+
+// Setup Local UI Profile Avatar
+document.getElementById('localAvatar').textContent = localDisplayName.charAt(0).toUpperCase();
+
+// User Status - Online
+const userRef = db.collection('users').doc(localUsername);
+userRef.set({
+  status: 'online',
+  displayName: localDisplayName,
+  lastActive: firebase.firestore.FieldValue.serverTimestamp()
+}, { merge: true });
+
+// Offline tracking
+window.addEventListener('beforeunload', () => {
+  cleanupLoungeOnLeave();
+  cleanupLocalCall();
+  userRef.set({ status: 'offline', lastActive: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
+});
+
+// App Global State
+let activeTab = 'friends';
+let activeFriend = null; 
+let activeChatId = null;
+let cachedFriends = [];
+let activeMobileOverlay = null; // 'dm-chat' | 'lounge-chat' | 'lounge-voice' | 'lounge-screen' | null
+
+// WebRTC DMs Call State
+let localMediaStream = null;
+let peerConnection = null;
+let activeCallId = null; 
+let activeCallType = null; 
+let screenSharingStream = null;
+const rtcServers = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+
+// Lounge State
+let loungeCode = null; 
+let loungeRoomListener = null;
+let loungeMsgListener = null;
+
+// Persistent state load
+window.addEventListener('load', () => {
+  const savedTab = localStorage.getItem('together_active_tab') || 'friends';
+  const savedChat = localStorage.getItem('together_active_chat');
+  const savedRoom = localStorage.getItem('together_active_room');
+
+  showTab(savedTab);
+  
+  if (savedTab === 'chats' && savedChat) {
+    const checkFriendsLoad = setInterval(() => {
+      if (cachedFriends.length > 0) {
+        selectFriendChat(savedChat);
+        clearInterval(checkFriendsLoad);
+      }
+    }, 200);
+  }
+
+  if (savedRoom) {
+    loungeCode = savedRoom;
+    enterLoungeWorkspace();
+  }
+});
+
+function getSortedChatId(u1, u2) {
+  return [u1, u2].sort().join('_');
+}
+
+// ── Tab Management ────────────────────────────────────
+function showTab(tabId) {
+  activeTab = tabId;
+  localStorage.setItem('together_active_tab', tabId);
+
+  document.getElementById('btnTabFriends').classList.toggle('active', tabId === 'friends');
+  document.getElementById('btnTabChats').classList.toggle('active', tabId === 'chats');
+  document.getElementById('btnTabSpace').classList.toggle('active', tabId === 'space');
+
+  document.getElementById('panelFriends').classList.toggle('active', tabId === 'friends');
+  document.getElementById('panelChats').classList.toggle('active', tabId === 'chats');
+  document.getElementById('panelSpace').classList.toggle('active', tabId === 'space');
+
+  if (tabId === 'chats') {
+    renderActiveDMsList();
+  } else if (tabId === 'space') {
+    if (loungeCode) {
+      document.getElementById('loungeLandingScreen').classList.add('hidden');
+      document.getElementById('loungeActiveWorkspaceSidebar').classList.remove('hidden');
+    } else {
+      document.getElementById('loungeLandingScreen').classList.remove('hidden');
+      document.getElementById('loungeActiveWorkspaceSidebar').classList.add('hidden');
+    }
+  }
+}
+
+// ── Mobile Overlay Controls (History Back Friendly) ───
+function openMobileOverlay(type) {
+  activeMobileOverlay = type;
+  
+  if (type === 'dm-chat') {
+    document.getElementById('chatActiveScreen').classList.add('active');
+  } else {
+    document.getElementById('loungeActiveWorkspace').classList.add('active');
+    document.getElementById('loungePanel-chat').classList.toggle('active', type === 'lounge-chat');
+    document.getElementById('loungePanel-voice').classList.toggle('active', type === 'lounge-voice');
+    document.getElementById('loungePanel-screen').classList.toggle('active', type === 'lounge-screen');
+    
+    if (type === 'lounge-chat') {
+      loadLoungeMessages();
+    }
+  }
+  
+  // Push state so back button closes overlay instead of navigating page
+  window.history.pushState({ overlay: type }, "");
+}
+
+function closeMobileOverlay(type) {
+  if (type === 'dm-chat') {
+    document.getElementById('chatActiveScreen').classList.remove('active');
+    activeFriend = null;
+    localStorage.removeItem('together_active_chat');
+    renderActiveDMsList();
+  } else {
+    document.getElementById('loungeActiveWorkspace').classList.remove('active');
+  }
+  activeMobileOverlay = null;
+}
+
+// Listen to browser popstate (e.g. back button click)
+window.addEventListener('popstate', (event) => {
+  if (activeMobileOverlay) {
+    const closingType = activeMobileOverlay;
+    closeMobileOverlay(closingType);
+  }
+});
+
+function goBackToSubSidebar() {
+  if (activeMobileOverlay) {
+    window.history.back(); // triggers popstate listener
+  }
+}
+
+function logout() {
+  document.getElementById('logoutConfirmModal').classList.add('active');
+}
+
+function executeLogout() {
+  document.getElementById('logoutConfirmModal').classList.remove('active');
+  try { cleanupLoungeOnLeave(); } catch(e) {}
+  try { cleanupLocalCall(); } catch(e) {}
+  
+  userRef.set({ status: 'offline', lastActive: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true }).catch(() => {});
+  sessionStorage.removeItem('together_user');
+  window.location.href = 'index.html';
+}
+
+// ── Friend Request & Syncing ──────────────────────────
+db.collection('friendships')
+  .where('user1', '==', localUsername)
+  .onSnapshot(handleFriendshipsSync);
+
+db.collection('friendships')
+  .where('user2', '==', localUsername)
+  .onSnapshot(handleFriendshipsSync);
+
+function handleFriendshipsSync() {
+  db.collection('friendships').get().then(snapshot => {
+    const pendingRequests = [];
+    const acceptedUsernames = [];
+
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      if (data.user1 === localUsername || data.user2 === localUsername) {
+        const friendUser = data.user1 === localUsername ? data.user2 : data.user1;
+        if (data.status === 'accepted') {
+          acceptedUsernames.push(friendUser);
+        } else if (data.status === `pending_${friendUser}_to_${localUsername}`) {
+          pendingRequests.push({ docId: doc.id, username: friendUser });
+        }
+      }
+    });
+
+    renderPendingRequestsUI(pendingRequests);
+    syncFriendProfiles(acceptedUsernames);
+  });
+}
+
+function renderPendingRequestsUI(requests) {
+  const listEl = document.getElementById('pendingRequestsList');
+  const headerEl = document.getElementById('pendingRequestsHeader');
+  
+  if (requests.length === 0) {
+    listEl.innerHTML = '';
+    headerEl.style.display = 'none';
+    return;
+  }
+  
+  headerEl.style.display = 'block';
+  listEl.innerHTML = requests.map(req => `
+    <div class="friend-card">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <div class="profile-avatar">${req.username.charAt(0).toUpperCase()}</div>
+        <div class="friend-details">
+          <span class="friend-name">@${req.username}</span>
+          <span style="font-size:11px; color:var(--text3);">Pending request</span>
+        </div>
+      </div>
+      <div style="display:flex; gap:6px;">
+        <button class="btn-icon decline" onclick="declineFriendRequest('${req.docId}')">✕</button>
+        <button class="btn-icon" onclick="acceptFriendRequest('${req.docId}')" style="border-color:var(--green); color:var(--green);">✓</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function syncFriendProfiles(usernames) {
+  if (usernames.length === 0) {
+    document.getElementById('activeFriendsList').innerHTML = '<p style="color:var(--text3); font-size:13px; padding:10px 0;">No friends yet.</p>';
+    cachedFriends = [];
+    renderActiveDMsList();
+    return;
+  }
+
+  const refs = usernames.map(u => db.collection('users').doc(u).get());
+  Promise.all(refs).then(docs => {
+    cachedFriends = docs.map(doc => {
+      const data = doc.data() || {};
+      return {
+        username: doc.id,
+        displayName: data.displayName || doc.id,
+        status: data.status || 'offline'
+      };
+    });
+
+    cachedFriends.sort((a,b) => (a.status === 'online' ? -1 : 1));
+
+    const listEl = document.getElementById('activeFriendsList');
+    listEl.innerHTML = cachedFriends.map(friend => `
+      <div class="friend-card">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div class="profile-avatar ${friend.status}" onclick="toggleProfileCard('${friend.username}')">${friend.displayName.charAt(0).toUpperCase()}</div>
+          <div class="friend-details">
+            <span class="friend-name" onclick="toggleProfileCard('${friend.username}')">${escapeHTML(friend.displayName)}</span>
+            <span class="friend-username">@${friend.username}</span>
+            <span class="friend-status ${friend.status}">${friend.status}</span>
+          </div>
+        </div>
+        <button class="btn-icon" onclick="openFriendDM('${friend.username}')">💬</button>
+      </div>
+    `).join('');
+
+    if (activeTab === 'chats') {
+      renderActiveDMsList();
+    }
+  });
+}
+
+function openFriendDM(username) {
+  showTab('chats');
+  selectFriendChat(username);
+}
+
+function renderActiveDMsList() {
+  const container = document.getElementById('subListContent');
+  if (cachedFriends.length === 0) {
+    container.innerHTML = '<p style="color:var(--text3); font-size:12px; padding:12px; text-align:center;">No friends yet</p>';
+    return;
+  }
+
+  container.innerHTML = cachedFriends.map(friend => `
+    <div class="sub-item ${activeFriend && activeFriend.username === friend.username ? 'active' : ''}" onclick="selectFriendChat('${friend.username}')">
+      <div class="sub-item-avatar ${friend.status}">${friend.displayName.charAt(0).toUpperCase()}</div>
+      <div style="flex:1; min-width:0;">
+        <div style="font-weight:600; text-overflow:ellipsis; overflow:hidden; white-space:nowrap; color:var(--text);">${escapeHTML(friend.displayName)}</div>
+        <div class="sub-item-status ${friend.status}">${friend.status}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function openAddFriendModal() {
+  document.getElementById('addFriendModal').classList.add('active');
+  document.getElementById('addFriendUsernameInput').focus();
+  document.getElementById('addFriendModalMsg').innerHTML = '';
+}
+function closeAddFriendModal() {
+  document.getElementById('addFriendModal').classList.remove('active');
+  document.getElementById('addFriendUsernameInput').value = '';
+}
+async function sendFriendRequest() {
+  const target = document.getElementById('addFriendUsernameInput').value.trim().toLowerCase();
+  const msg = document.getElementById('addFriendModalMsg');
+  if (!target) { msg.textContent = 'Enter username!'; msg.style.color = 'var(--red)'; return; }
+  if (target === localUsername) { msg.textContent = 'Cannot add yourself!'; msg.style.color = 'var(--red)'; return; }
+
+  try {
+    const doc = await db.collection('users').doc(target).get();
+    if (!doc.exists) { msg.textContent = 'User not found!'; msg.style.color = 'var(--red)'; return; }
+
+    const docId = getSortedChatId(localUsername, target);
+    const friendRef = db.collection('friendships').doc(docId);
+    const friendDoc = await friendRef.get();
+
+    if (friendDoc.exists) {
+      if (friendDoc.data().status === 'accepted') {
+        msg.textContent = 'Already friends!';
+        msg.style.color = 'var(--green)';
+      } else {
+        msg.textContent = 'Request already pending!';
+        msg.style.color = 'var(--red)';
+      }
+    } else {
+      await friendRef.set({
+        user1: localUsername,
+        user2: target,
+        status: `pending_${localUsername}_to_${target}`,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      msg.textContent = 'Request sent!';
+      msg.style.color = 'var(--green)';
+      setTimeout(closeAddFriendModal, 800);
+    }
+  } catch(e) { msg.textContent = 'Error: ' + e.message; msg.style.color = 'var(--red)'; }
+}
+
+function acceptFriendRequest(docId) {
+  db.collection('friendships').doc(docId).update({
+    status: 'accepted',
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+}
+function declineFriendRequest(docId) {
+  db.collection('friendships').doc(docId).delete();
+}
+
+// ── DM Messages Loading & Sending ─────────────────────
+let dmMsgsListener = null;
+let lastLoadedMessageDoc = null;
+let chatMessagesCached = [];
+
+function selectFriendChat(username) {
+  const friend = cachedFriends.find(f => f.username === username);
+  if (!friend) return;
+
+  activeFriend = friend;
+  activeChatId = getSortedChatId(localUsername, username);
+  localStorage.setItem('together_active_chat', username);
+
+  document.getElementById('chatActiveUser').textContent = friend.displayName;
+  document.getElementById('chatActiveStatus').textContent = friend.status;
+  document.getElementById('chatActiveStatus').className = `sub-item-status ${friend.status}`;
+
+  renderActiveDMsList();
+
+  if (dmMsgsListener) dmMsgsListener();
+  lastLoadedMessageDoc = null;
+  chatMessagesCached = [];
+  
+  const msgBox = document.getElementById('chatMessagesArea');
+  msgBox.innerHTML = '<div style="color:var(--text3); font-size:12px; text-align:center; padding:15px;">Loading message logs...</div>';
+
+  dmMsgsListener = db.collection('chats').doc(activeChatId).collection('messages')
+    .orderBy('timestamp', 'desc')
+    .limit(100)
+    .onSnapshot(snapshot => {
+      msgBox.innerHTML = '';
+      if (snapshot.empty) {
+        msgBox.innerHTML = '<div style="color:var(--text3); font-size:12px; text-align:center; padding:15px;">No messages. Send a hello!</div>';
+        return;
+      }
+
+      lastLoadedMessageDoc = snapshot.docs[snapshot.docs.length - 1];
+      const docs = [];
+      snapshot.forEach(d => docs.unshift(d.data()));
+
+      if (snapshot.docs.length >= 100) {
+        const pag = document.createElement('div');
+        pag.className = 'pagination-row';
+        pag.innerHTML = `<button class="btn-load-more" onclick="loadOlderDMMessages()">Load Older Messages</button>`;
+        msgBox.appendChild(pag);
+      }
+
+      let lastTime = null;
+      docs.forEach(data => {
+        const curTime = data.timestamp ? data.timestamp.toDate() : new Date();
+        if (!lastTime || (curTime - lastTime > 15 * 60 * 1000)) {
+          appendTimeSeparatorDOM(curTime, msgBox);
+        }
+        lastTime = curTime;
+        appendMessageDOM(data, msgBox);
+      });
+      msgBox.scrollTop = msgBox.scrollHeight;
+    });
+
+  // Slide open overlay
+  openMobileOverlay('dm-chat');
+}
+
+function getFileIcon(name) {
+  const ext = (name.split('.').pop() || '').toLowerCase();
+  if (['jpg','jpeg','png','gif','webp','svg','bmp','ico'].includes(ext)) return '🖼️';
+  if (['mp4','mov','avi','mkv','webm'].includes(ext)) return '🎬';
+  if (['mp3','wav','ogg','flac','aac'].includes(ext)) return '🎵';
+  if (['pdf'].includes(ext)) return '📄';
+  if (['doc','docx'].includes(ext)) return '📝';
+  if (['xls','xlsx','csv'].includes(ext)) return '📊';
+  if (['zip','rar','7z','tar','gz'].includes(ext)) return '🗜️';
+  return '📁';
+}
+
+function formatBytes(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1048576) return (bytes/1024).toFixed(1) + ' KB';
+  return (bytes/1048576).toFixed(1) + ' MB';
+}
+
+function renderAttachmentsHTML(attachments, isSent) {
+  if (!attachments || !attachments.length) return '';
+  const imgs = attachments.filter(a => a.type === 'image');
+  const files = attachments.filter(a => a.type !== 'image');
+  let html = '<div class="msg-attachments-container">';
+  
+  if (imgs.length) {
+    const cls = imgs.length === 1 ? 'grid-1' : imgs.length === 2 ? 'grid-2' : imgs.length === 3 ? 'grid-3' : 'grid-many';
+    html += `<div class="msg-img-grid ${cls}">`;
+    imgs.forEach(a => {
+      html += `<img src="${a.url}" alt="${escapeHTML(a.name)}" loading="lazy" onclick="openLightbox('${a.url}')" />`;
+    });
+    html += '</div>';
+  }
+  
+  files.forEach(a => {
+    html += `<a class="msg-file-card" href="${a.url}" target="_blank" rel="noopener">
+      <span class="msg-file-icon">${getFileIcon(a.name)}</span>
+      <span class="msg-file-info">
+        <span class="msg-file-name">${escapeHTML(a.name)}</span>
+        <span class="msg-file-size">${formatBytes(a.size)}</span>
+      </span>
+    </a>`;
+  });
+  
+  html += '</div>';
+  return html;
+}
+
+function appendMessageDOM(data, container) {
+  const isSent = data.sender === localUsername;
+  const senderInitial = isSent ? localDisplayName.charAt(0).toUpperCase() : (activeFriend ? activeFriend.displayName.charAt(0).toUpperCase() : '?');
+  const senderUser  = isSent ? localUsername : (activeFriend ? activeFriend.username : data.sender);
+  const attachHTML = renderAttachmentsHTML(data.attachments, isSent);
+  const hasText = data.text && data.text.trim();
+  
+  const row = document.createElement('div');
+  row.className = `msg-row ${isSent ? 'sent' : 'recv'}`;
+  row.innerHTML = `
+    <div class="msg-avatar" onclick="toggleProfileCard('${senderUser}')">${senderInitial}</div>
+    <div class="msg-group">
+      ${attachHTML}
+      ${hasText ? `<div class="msg-bubble">${escapeHTML(data.text)}</div>` : ''}
+    </div>
+  `;
+  container.appendChild(row);
+}
+
+function loadOlderDMMessages() {
+  if (!lastLoadedMessageDoc || !activeChatId) return;
+
+  const msgBox = document.getElementById('chatMessagesArea');
+  const pagRow = msgBox.querySelector('.pagination-row');
+  if (pagRow) pagRow.innerHTML = '<span style="font-size:11px; color:var(--text3)">Loading...</span>';
+
+  db.collection('chats').doc(activeChatId).collection('messages')
+    .orderBy('timestamp', 'desc')
+    .startAfter(lastLoadedMessageDoc)
+    .limit(100)
+    .get()
+    .then(snapshot => {
+      if (snapshot.empty) {
+        if (pagRow) pagRow.remove();
+        showToast('No more older messages.');
+        return;
+      }
+
+      lastLoadedMessageDoc = snapshot.docs[snapshot.docs.length - 1];
+      const docs = [];
+      snapshot.forEach(d => docs.push(d.data()));
+
+      if (pagRow) pagRow.remove();
+      const curScrollHeight = msgBox.scrollHeight;
+
+      if (snapshot.docs.length >= 100) {
+        const pag = document.createElement('div');
+        pag.className = 'pagination-row';
+        pag.innerHTML = `<button class="btn-load-more" onclick="loadOlderDMMessages()">Load Older Messages</button>`;
+        msgBox.insertBefore(pag, msgBox.firstChild);
+      }
+
+      docs.forEach(data => {
+        const isSent = data.sender === localUsername;
+        const row = document.createElement('div');
+        row.className = `msg-row ${isSent ? 'sent' : 'recv'}`;
+        row.innerHTML = `
+          <div class="msg-bubble">
+            <div class="msg-sender">${isSent ? 'You' : escapeHTML(activeFriend.displayName)}</div>
+            <div>${escapeHTML(data.text)}</div>
+          </div>
+        `;
+        msgBox.insertBefore(row, msgBox.children[1] || msgBox.firstChild);
+      });
+
+      msgBox.scrollTop = msgBox.scrollHeight - curScrollHeight;
+    });
+}
+
+// ── Attachment handling ──────────────────────────────
+let dmPendingFiles = [];
+let loungePendingFiles = [];
+
+function handleAttachmentSelect(event, chatType) {
+  const files = Array.from(event.target.files);
+  const pending = chatType === 'DM' ? dmPendingFiles : loungePendingFiles;
+  
+  for (const f of files) {
+    if (pending.length >= 10) { showToast('Max 10 attachments allowed!'); break; }
+    pending.push(f);
+  }
+  event.target.value = '';
+  renderAttachmentPreview(chatType);
+}
+
+function renderAttachmentPreview(chatType) {
+  const pending = chatType === 'DM' ? dmPendingFiles : loungePendingFiles;
+  const preview = document.getElementById(chatType === 'DM' ? 'chatAttachmentPreview' : 'loungeAttachmentPreview');
+  
+  if (!pending.length) { preview.style.display = 'none'; preview.innerHTML = ''; return; }
+  preview.style.display = 'flex';
+  preview.innerHTML = pending.map((f, i) => {
+    const isImg = f.type.startsWith('image/');
+    const thumb = isImg ? `<img src="${URL.createObjectURL(f)}" alt="" />` : `<div class="file-icon">${getFileIcon(f.name)}</div>`;
+    return `<div class="attachment-preview-item">${thumb}<button class="attachment-preview-remove" onclick="removeAttachment(${i},'${chatType}')">✕</button></div>`;
+  }).join('');
+}
+
+function removeAttachment(index, chatType) {
+  const pending = chatType === 'DM' ? dmPendingFiles : loungePendingFiles;
+  pending.splice(index, 1);
+  renderAttachmentPreview(chatType);
+}
+
+function compressImage(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        let w = img.naturalWidth, h = img.naturalHeight;
+        if (w > 1280 || h > 1280) {
+          if (w >= h) { h = Math.round(h * 1280 / w); w = 1280; }
+          else        { w = Math.round(w * 1280 / h); h = 1280; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', 0.82));
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function readFileAsBase64(file) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => resolve(e.target.result);
+    reader.readAsDataURL(file);
+  });
+}
+
+async function processAttachments(files) {
+  const results = [];
+  for (const f of files) {
+    try {
+      if (f.type.startsWith('image/')) {
+        const dataUrl = await compressImage(f);
+        results.push({ url: dataUrl, name: f.name, size: f.size, type: 'image' });
+      } else {
+        if (f.size <= 500 * 1024) {
+          const dataUrl = await readFileAsBase64(f);
+          results.push({ url: dataUrl, name: f.name, size: f.size, type: 'file' });
+        } else {
+          showToast(`${f.name}: Files >500KB not allowed.`);
+        }
+      }
+    } catch(err) {
+      showToast(`Failed to process ${f.name}`);
+    }
+  }
+  return results;
+}
+
+async function sendDMMessage() {
+  const input = document.getElementById('chatInputMessage');
+  const btn   = document.getElementById('chatSendBtn');
+  const txt   = input.value.trim();
+  if ((!txt && !dmPendingFiles.length) || !activeChatId) return;
+
+  const filesToProcess = [...dmPendingFiles];
+  dmPendingFiles = [];
+  renderAttachmentPreview('DM');
+  input.value = '';
+
+  if (filesToProcess.length) {
+    btn.textContent = '…';
+    btn.disabled = true;
+    try {
+      const attachments = await processAttachments(filesToProcess);
+      await db.collection('chats').doc(activeChatId).collection('messages').add({
+        sender: localUsername,
+        text: txt,
+        attachments: attachments.length ? attachments : null,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    } catch(e) { showToast('Send failed: ' + e.message); }
+    btn.textContent = '➤';
+    btn.disabled = false;
+  } else {
+    db.collection('chats').doc(activeChatId).collection('messages').add({
+      sender: localUsername,
+      text: txt,
+      timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    });
+  }
+}
+
+// ── WebRTC calling in DMs ─────────────────────────────
+db.collection('calls')
+  .where('receiver', '==', localUsername)
+  .onSnapshot(snapshot => {
+    snapshot.docChanges().forEach(change => {
+      const data = change.doc.data();
+      if (change.type === 'added' || change.type === 'modified') {
+        if (data.status === 'ringing') {
+          showIncomingCallPopup(change.doc.id, data.caller, data.type);
+        } else if (data.status === 'ended') {
+          cleanupLocalCall();
+        }
+      }
+    });
+  });
+
+function showIncomingCallPopup(callId, caller, type) {
+  if (activeCallId) {
+    db.collection('calls').doc(callId).update({ status: 'ended' });
+    return;
+  }
+  
+  activeCallId = callId;
+  activeCallType = type;
+  
+  const friend = cachedFriends.find(f => f.username === caller) || { displayName: caller };
+  document.getElementById('toastCallerAvatar').textContent = friend.displayName.charAt(0).toUpperCase();
+  document.getElementById('toastCallerName').textContent = friend.displayName;
+  document.getElementById('toastCallType').textContent = `Incoming ${type.toUpperCase()} Call...`;
+  document.getElementById('incomingCallToast').classList.add('active');
+}
+
+function declineIncomingCall() {
+  document.getElementById('incomingCallToast').classList.remove('active');
+  if (activeCallId) {
+    db.collection('calls').doc(activeCallId).update({ status: 'ended' });
+  }
+  activeCallId = null;
+}
+
+async function acceptIncomingCall() {
+  document.getElementById('incomingCallToast').classList.remove('active');
+  if (!activeCallId) return;
+
+  const callerUsername = activeCallId.replace(localUsername, '').replace('_', '');
+  selectFriendChat(callerUsername);
+  
+  const callOverlay = document.getElementById('callOverlay');
+  callOverlay.classList.add('active');
+  document.getElementById('btnCallShare').style.display = 'block';
+
+  const isVideo = activeCallType === 'video';
+  document.getElementById('btnCallCam').style.display = isVideo ? 'block' : 'none';
+  document.getElementById('remoteVideoPlayer').classList.toggle('hidden', !isVideo);
+  document.getElementById('remoteCallAvatar').classList.toggle('hidden', isVideo);
+  
+  try {
+    localMediaStream = await navigator.mediaDevices.getUserMedia({
+      audio: true,
+      video: isVideo ? { width: 320, height: 240 } : false
+    });
+
+    if (isVideo) {
+      document.getElementById('floatingLocalVideoContainer').style.display = 'block';
+      document.getElementById('localVideoPlayer').srcObject = localMediaStream;
+    }
+
+    peerConnection = new RTCPeerConnection(rtcServers);
+    localMediaStream.getTracks().forEach(track => peerConnection.addTrack(track, localMediaStream));
+
+    peerConnection.onicecandidate = event => {
+      if (event.candidate) {
+        db.collection('calls').doc(activeCallId).collection('receiverCandidates').add(event.candidate.toJSON());
+      }
+    };
+
+    peerConnection.ontrack = event => {
+      if (isVideo) {
+        document.getElementById('remoteVideoPlayer').srcObject = event.streams[0];
+      } else {
+        document.getElementById('remoteAudioPlayer').srcObject = event.streams[0];
+      }
+    };
+
+    const callDoc = db.collection('calls').doc(activeCallId);
+    const snapshot = await callDoc.get();
+    await peerConnection.setRemoteDescription(new RTCSessionDescription(snapshot.data().offer));
+    
+    const answer = await peerConnection.createAnswer();
+    await peerConnection.setLocalDescription(answer);
+
+    await callDoc.update({
+      status: 'connected',
+      answer: { sdp: answer.sdp, type: answer.type }
+    });
+
+    callDoc.collection('callerCandidates').onSnapshot(snap => {
+      snap.docChanges().forEach(change => {
+        if (change.type === 'added') {
+          peerConnection.addIceCandidate(new RTCIceCandidate(change.doc.data()));
+        }
+      });
+    });
+
+    document.getElementById('remoteVideoLabel').textContent = 'Connected';
+  } catch(e) {
+    endCurrentCall();
+  }
+}
+
+async function initiateCall(type) {
+  if (!activeFriend) return;
+
+  activeCallId = getSortedChatId(localUsername, activeFriend.username);
+  activeCallType = type;
+
+  const callOverlay = document.getElementById('callOverlay');
+  callOverlay.classList.add('active');
+  document.getElementById('btnCallShare').style.display = 'block';
+  
+  const isVideo = type === 'video';
+  document.getElementById('btnCallCam').style.display = isVideo ? 'block' : 'none';
+  document.getElementById('remoteVideoPlayer').classList.toggle('hidden', !isVideo);
+  document.getElementById('remoteCallAvatar').classList.toggle('hidden', isVideo);
+  document.getElementById('remoteVideoLabel').textContent = 'Calling...';
+
+  try {
+    localMediaStream = await navigator.mediaDevices.getUserMedia({
+      audio: true,
+      video: isVideo ? { width: 320, height: 240 } : false
+    });
+
+    if (isVideo) {
+      document.getElementById('floatingLocalVideoContainer').style.display = 'block';
+      document.getElementById('localVideoPlayer').srcObject = localMediaStream;
+    }
+
+    peerConnection = new RTCPeerConnection(rtcServers);
+    localMediaStream.getTracks().forEach(track => peerConnection.addTrack(track, localMediaStream));
+
+    peerConnection.onicecandidate = event => {
+      if (event.candidate) {
+        db.collection('calls').doc(activeCallId).collection('callerCandidates').add(event.candidate.toJSON());
+      }
+    };
+
+    peerConnection.ontrack = event => {
+      if (isVideo) {
+        document.getElementById('remoteVideoPlayer').srcObject = event.streams[0];
+      } else {
+        document.getElementById('remoteAudioPlayer').srcObject = event.streams[0];
+      }
+    };
+
+    const offer = await peerConnection.createOffer();
+    await peerConnection.setLocalDescription(offer);
+
+    const callDoc = db.collection('calls').doc(activeCallId);
+    await callDoc.set({
+      caller: localUsername,
+      receiver: activeFriend.username,
+      status: 'ringing',
+      type,
+      offer: { sdp: offer.sdp, type: offer.type }
+    });
+
+    callDoc.onSnapshot(snap => {
+      const callData = snap.data();
+      if (callData) {
+        if (callData.status === 'connected' && callData.answer && !peerConnection.currentRemoteDescription) {
+          peerConnection.setRemoteDescription(new RTCSessionDescription(callData.answer));
+          document.getElementById('remoteVideoLabel').textContent = 'Connected';
+        } else if (callData.status === 'ended') {
+          cleanupLocalCall();
+        }
+      }
+    });
+
+    callDoc.collection('receiverCandidates').onSnapshot(snap => {
+      snap.docChanges().forEach(change => {
+        if (change.type === 'added') {
+          peerConnection.addIceCandidate(new RTCIceCandidate(change.doc.data()));
+        }
+      });
+    });
+  } catch(e) {
+    endCurrentCall();
+  }
+}
+
+function endCurrentCall() {
+  if (activeCallId) {
+    db.collection('calls').doc(activeCallId).update({ status: 'ended' });
+  }
+  cleanupLocalCall();
+}
+
+function cleanupLocalCall() {
+  document.getElementById('callOverlay').classList.remove('active');
+  document.getElementById('floatingLocalVideoContainer').style.display = 'none';
+  document.getElementById('localVideoPlayer').srcObject = null;
+  document.getElementById('remoteVideoPlayer').srcObject = null;
+  document.getElementById('remoteAudioPlayer').srcObject = null;
+  
+  if (localMediaStream) {
+    localMediaStream.getTracks().forEach(t => t.stop());
+    localMediaStream = null;
+  }
+  if (screenSharingStream) {
+    screenSharingStream.getTracks().forEach(t => t.stop());
+    screenSharingStream = null;
+  }
+  if (peerConnection) {
+    peerConnection.close();
+    peerConnection = null;
+  }
+  activeCallId = null;
+  activeCallType = null;
+}
+
+let callMuted = false;
+function toggleCallMute() {
+  callMuted = !callMuted;
+  if (localMediaStream) {
+    localMediaStream.getAudioTracks().forEach(t => t.enabled = !callMuted);
+  }
+  document.getElementById('btnCallMute').classList.toggle('active', callMuted);
+}
+
+let callCamOn = true;
+function toggleCallCam() {
+  callCamOn = !callCamOn;
+  if (localMediaStream) {
+    localMediaStream.getVideoTracks().forEach(t => t.enabled = callCamOn);
+  }
+  document.getElementById('btnCallCam').classList.toggle('active', !callCamOn);
+}
+
+async function toggleCallScreenShare() {
+  if (!peerConnection) return;
+  if (!screenSharingStream) {
+    try {
+      screenSharingStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+      const videoTrack = screenSharingStream.getVideoTracks()[0];
+      const sender = peerConnection.getSenders().find(s => s.track && s.track.kind === 'video');
+      if (sender) sender.replaceTrack(videoTrack);
+      document.getElementById('localVideoPlayer').srcObject = screenSharingStream;
+      document.getElementById('btnCallShare').classList.add('active');
+      videoTrack.addEventListener('ended', stopScreenShareTrack);
+    } catch(e) {}
+  } else {
+    stopScreenShareTrack();
+  }
+}
+
+function stopScreenShareTrack() {
+  if (!screenSharingStream) return;
+  screenSharingStream.getTracks().forEach(t => t.stop());
+  screenSharingStream = null;
+
+  if (localMediaStream && peerConnection) {
+    const videoTrack = localMediaStream.getVideoTracks()[0];
+    const sender = peerConnection.getSenders().find(s => s.track && s.track.kind === 'video');
+    if (sender && videoTrack) sender.replaceTrack(videoTrack);
+    document.getElementById('localVideoPlayer').srcObject = localMediaStream;
+  }
+  document.getElementById('btnCallShare').classList.remove('active');
+}
+
+// ── Together Lounge Workspace ─────────────────────────
+function generateRandomRoomCode() {
+  const ch = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  return Array.from({length: 6}, () => ch[Math.floor(Math.random() * ch.length)]).join('');
+}
+
+async function setupLoungeRoom(mode) {
+  const msg = document.getElementById('loungeLandingMsg');
+  msg.textContent = '';
+
+  if (mode === 'create') {
+    const code = generateRandomRoomCode();
+    loungeCode = code;
+    try {
+      await db.collection('rooms').doc(code).set({
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        creator: localUsername,
+        members: {
+          [localUsername]: { displayName: localDisplayName, joinedAt: firebase.firestore.FieldValue.serverTimestamp() }
+        }
+      });
+      document.getElementById('loungeGeneratedCode').textContent = code;
+      document.getElementById('loungeCreateBox').classList.remove('hidden');
+      showToast(`Lounge created: ${code}`);
+      setTimeout(() => enterLoungeWorkspace(), 1500);
+    } catch(e) { msg.textContent = e.message; }
+  } else {
+    const code = document.getElementById('loungeJoinInput').value.trim().toUpperCase();
+    if (code.length !== 6) { msg.textContent = 'Enter a 6-digit code!'; return; }
+    try {
+      const docRef = db.collection('rooms').doc(code);
+      const snapshot = await docRef.get();
+      if (!snapshot.exists) { msg.textContent = 'Room not found!'; return; }
+      loungeCode = code;
+      await docRef.update({
+        [`members.${localUsername}`]: {
+          displayName: localDisplayName,
+          joinedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }
+      });
+      showToast(`Joined lounge ${code}!`);
+      enterLoungeWorkspace();
+    } catch(e) { msg.textContent = e.message; }
+  }
+}
+
+function enterLoungeWorkspace() {
+  localStorage.setItem('together_active_room', loungeCode);
+  document.getElementById('loungeLandingScreen').classList.add('hidden');
+  document.getElementById('loungeActiveWorkspaceSidebar').classList.remove('hidden');
+  
+  document.getElementById('loungeCodeSub').textContent = `Code: ${loungeCode}`;
+  showTab('space');
+  watchLoungeScreenBroadcast();
+
+  if (loungeRoomListener) loungeRoomListener();
+  loungeRoomListener = db.collection('rooms').doc(loungeCode).onSnapshot(doc => {
+    if (!doc.exists) {
+      exitLoungeWorkspace();
+      showToast('Lounge session has been deleted.');
+      return;
+    }
+    const data = doc.data();
+    renderLoungeMembers(data.members || {});
+  });
+}
+
+function renderLoungeMembers(members) {
+  const container = document.getElementById('loungeMembersList');
+  const header = document.getElementById('loungeMembersHeader');
+  const keys = Object.keys(members);
+  
+  header.textContent = `Room Members (${keys.length})`;
+  container.innerHTML = keys.map(m => `
+    <div class="sub-item" style="background:rgba(255,255,255,0.02); margin-bottom:4px;" onclick="toggleProfileCard('${m}')">
+      <div class="sub-item-avatar">${(members[m].displayName || m).charAt(0).toUpperCase()}</div>
+      <div style="flex:1;">
+        <div style="font-weight:600; font-size:12.5px; color:var(--text);">${escapeHTML(members[m].displayName || m)}</div>
+        <div style="font-size:10px; color:var(--text3); font-weight:400;">Member</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// Lounge Chat message loader
+function loadLoungeMessages() {
+  if (loungeMsgListener) loungeMsgListener();
+  const msgBox = document.getElementById('loungeMessagesArea');
+  msgBox.innerHTML = '<div style="color:var(--text3); font-size:12px; text-align:center; padding:15px;">Loading Lounge Chat...</div>';
+
+  loungeMsgListener = db.collection('rooms').doc(loungeCode).collection('messages')
+    .orderBy('timestamp', 'asc')
+    .limit(100)
+    .onSnapshot(snapshot => {
+      msgBox.innerHTML = '';
+      if (snapshot.empty) {
+        msgBox.innerHTML = '<div style="color:var(--text3); font-size:12px; text-align:center; padding:15px;">Welcome to Lounge! Send a message.</div>';
+        return;
+      }
+
+      let lastTime = null;
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        const curTime = data.timestamp ? data.timestamp.toDate() : new Date();
+        if (!lastTime || (curTime - lastTime > 15 * 60 * 1000)) {
+          appendTimeSeparatorDOM(curTime, msgBox);
+        }
+        lastTime = curTime;
+
+        const isSelf = data.sender === localUsername;
+        const senderInit = (data.sender || '?').charAt(0).toUpperCase();
+        const attachHTML = renderAttachmentsHTML(data.attachments, isSelf);
+        const hasText = data.text && data.text.trim();
+        
+        const row = document.createElement('div');
+        row.className = `msg-row ${isSelf ? 'sent' : 'recv'}`;
+        row.innerHTML = `
+          <div class="msg-avatar" onclick="toggleProfileCard('${data.sender}')">${senderInit}</div>
+          <div class="msg-group">
+            ${!isSelf ? `<div class="msg-sender">@${data.sender}</div>` : ''}
+            ${attachHTML}
+            ${hasText ? `<div class="msg-bubble">${escapeHTML(data.text)}</div>` : ''}
+          </div>
+        `;
+        msgBox.appendChild(row);
+      });
+      msgBox.scrollTop = msgBox.scrollHeight;
+    });
+}
+
+async function sendLoungeMessage() {
+  const input = document.getElementById('loungeInputMessage');
+  const btn   = document.getElementById('loungeSendBtn');
+  const txt   = input.value.trim();
+  if ((!txt && !loungePendingFiles.length) || !loungeCode) return;
+
+  const filesToProcess = [...loungePendingFiles];
+  loungePendingFiles = [];
+  renderAttachmentPreview('Lounge');
+  input.value = '';
+
+  if (filesToProcess.length) {
+    btn.textContent = '…';
+    btn.disabled = true;
+    try {
+      const attachments = await processAttachments(filesToProcess);
+      await db.collection('rooms').doc(loungeCode).collection('messages').add({
+        sender: localUsername,
+        text: txt,
+        attachments: attachments.length ? attachments : null,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    } catch(e) { showToast('Send failed'); }
+    btn.textContent = '➤';
+    btn.disabled = false;
+  } else {
+    db.collection('rooms').doc(loungeCode).collection('messages').add({
+      sender: localUsername,
+      text: txt,
+      timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    });
+  }
+}
+
+// Together Lounge WebRTC Voice
+let loungeLocalStream = null;
+let loungePeerConnection = null;
+let loungeVoiceUnsub = null;
+let loungeVoiceMuted = false;
+
+async function joinLoungeVoiceCall() {
+  if (!loungeCode) return;
+  document.getElementById('loungeVoiceStatus').textContent = 'Connecting...';
+  try {
+    loungeLocalStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    loungePeerConnection = new RTCPeerConnection(rtcServers);
+    loungeLocalStream.getTracks().forEach(t => loungePeerConnection.addTrack(t, loungeLocalStream));
+    
+    loungePeerConnection.onicecandidate = e => {
+      if (e.candidate && loungeCode) {
+        db.collection('rooms').doc(loungeCode).collection('voiceCandidates').add({
+          candidate: e.candidate.toJSON(),
+          sender: localUsername
+        });
+      }
+    };
+    loungePeerConnection.ontrack = e => {
+      document.getElementById('remoteAudioPlayer').srcObject = e.streams[0];
+    };
+    
+    const roomRef = db.collection('rooms').doc(loungeCode);
+    const snap = await roomRef.get();
+    const voiceState = snap.data()?.voiceState || {};
+    
+    if (voiceState.status === 'ringing' && voiceState.host !== localUsername) {
+      await loungePeerConnection.setRemoteDescription(new RTCSessionDescription(voiceState.offer));
+      const answer = await loungePeerConnection.createAnswer();
+      await loungePeerConnection.setLocalDescription(answer);
+      await roomRef.update({
+        'voiceState.status': 'connected',
+        'voiceState.answer': { sdp: answer.sdp, type: answer.type }
+      });
+    } else {
+      const offer = await loungePeerConnection.createOffer();
+      await loungePeerConnection.setLocalDescription(offer);
+      await roomRef.update({
+        voiceState: { host: localUsername, status: 'ringing', offer: { sdp: offer.sdp, type: offer.type } }
+      });
+    }
+    
+    document.getElementById('btnJoinLoungeCall').classList.add('hidden');
+    document.getElementById('btnLeaveLoungeCall').classList.remove('hidden');
+    document.getElementById('loungeVoiceCtrls').style.display = 'block';
+    document.getElementById('loungeVoiceStatus').textContent = 'Voice Connected 🟢';
+    
+    db.collection('rooms').doc(loungeCode).collection('voiceCandidates')
+      .where('sender', '!=', localUsername)
+      .onSnapshot(s => {
+        s.docChanges().forEach(change => {
+          if (change.type === 'added') loungePeerConnection.addIceCandidate(new RTCIceCandidate(change.doc.data().candidate));
+        });
+      });
+      
+    loungeVoiceUnsub = roomRef.onSnapshot(doc => {
+      const vs = doc.data()?.voiceState || {};
+      if (vs.status === 'connected' && vs.answer && !loungePeerConnection.currentRemoteDescription) {
+        loungePeerConnection.setRemoteDescription(new RTCSessionDescription(vs.answer));
+      } else if (vs.status === 'ended') {
+        leaveLoungeVoiceCall();
+      }
+    });
+  } catch(e) {
+    document.getElementById('loungeVoiceStatus').textContent = 'Mic Access Denied';
+  }
+}
+
+function leaveLoungeVoiceCall() {
+  if (loungeVoiceUnsub) { loungeVoiceUnsub(); loungeVoiceUnsub = null; }
+  if (loungeCode) db.collection('rooms').doc(loungeCode).update({ 'voiceState.status': 'ended' }).catch(() => {});
+  if (loungeLocalStream) { loungeLocalStream.getTracks().forEach(t => t.stop()); loungeLocalStream = null; }
+  if (loungePeerConnection) { loungePeerConnection.close(); loungePeerConnection = null; }
+  
+  document.getElementById('btnJoinLoungeCall').classList.remove('hidden');
+  document.getElementById('btnLeaveLoungeCall').classList.add('hidden');
+  document.getElementById('loungeVoiceCtrls').style.display = 'none';
+  document.getElementById('loungeVoiceStatus').textContent = 'Voice Call Disconnected';
+  document.getElementById('remoteAudioPlayer').srcObject = null;
+}
+
+function toggleLoungeVoiceMute() {
+  loungeVoiceMuted = !loungeVoiceMuted;
+  if (loungeLocalStream) loungeLocalStream.getAudioTracks().forEach(t => t.enabled = !loungeVoiceMuted);
+  document.getElementById('btnLoungeVoiceMute').classList.toggle('active', loungeVoiceMuted);
+}
+
+// Together Lounge WebRTC Screen Share
+let loungeScreenStream = null;
+let loungeScreenPeerConnection = null;
+let loungeScreenUnsub = null;
+let loungeScreenRecvPC = null;
+let loungeScreenRecvUnsub = null;
+
+async function toggleLoungeScreenShare() {
+  if (!loungeCode) return;
+  const btn = document.getElementById('btnLoungeShare');
+  if (!loungeScreenStream) {
+    try {
+      loungeScreenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+      const videoTrack = loungeScreenStream.getVideoTracks()[0];
+      document.getElementById('loungeScreenPlayer').srcObject = loungeScreenStream;
+      document.getElementById('loungeScreenPlayer').style.display = 'block';
+      document.getElementById('loungeScreenPlaceholder').style.display = 'none';
+      document.getElementById('loungeScreenLabel').textContent = 'My Screen (Sharing)';
+      document.getElementById('loungeScreenLabel').classList.remove('hidden');
+      btn.textContent = '⏹ Stop';
+      
+      loungeScreenPeerConnection = new RTCPeerConnection(rtcServers);
+      loungeScreenPeerConnection.addTrack(videoTrack, loungeScreenStream);
+      
+      loungeScreenPeerConnection.onicecandidate = e => {
+        if (e.candidate && loungeCode) {
+          db.collection('rooms').doc(loungeCode).collection('screenCandidates').add({
+            candidate: e.candidate.toJSON(),
+            sender: localUsername
+          });
+        }
+      };
+      
+      const offer = await loungeScreenPeerConnection.createOffer();
+      await loungeScreenPeerConnection.setLocalDescription(offer);
+      await db.collection('rooms').doc(loungeCode).update({
+        screenState: { host: localUsername, status: 'broadcasting', offer: { sdp: offer.sdp, type: offer.type } }
+      });
+      
+      videoTrack.addEventListener('ended', toggleLoungeScreenShare);
+      loungeScreenUnsub = db.collection('rooms').doc(loungeCode).onSnapshot(doc => {
+        const ss = doc.data()?.screenState || {};
+        if (ss.status === 'broadcasting' && ss.answer && !loungeScreenPeerConnection.currentRemoteDescription) {
+          loungeScreenPeerConnection.setRemoteDescription(new RTCSessionDescription(ss.answer));
+        } else if (ss.status === 'ended') {
+          toggleLoungeScreenShare();
+        }
+      });
+      
+      db.collection('rooms').doc(loungeCode).collection('screenCandidates')
+        .where('sender', '!=', localUsername)
+        .onSnapshot(s => {
+          s.docChanges().forEach(change => {
+            if (change.type === 'added') loungeScreenPeerConnection.addIceCandidate(new RTCIceCandidate(change.doc.data().candidate));
+          });
+        });
+    } catch(e) {}
+  } else {
+    if (loungeScreenStream) { loungeScreenStream.getTracks().forEach(t => t.stop()); loungeScreenStream = null; }
+    if (loungeScreenPeerConnection) { loungeScreenPeerConnection.close(); loungeScreenPeerConnection = null; }
+    if (loungeScreenUnsub) { loungeScreenUnsub(); loungeScreenUnsub = null; }
+    db.collection('rooms').doc(loungeCode).update({ 'screenState.status': 'ended' }).catch(() => {});
+    document.getElementById('loungeScreenPlayer').srcObject = null;
+    document.getElementById('loungeScreenPlayer').style.display = 'none';
+    document.getElementById('loungeScreenPlaceholder').style.display = 'flex';
+    document.getElementById('loungeScreenLabel').classList.add('hidden');
+    btn.textContent = '🖥️ Share Screen';
+  }
+}
+
+function watchLoungeScreenBroadcast() {
+  if (loungeScreenRecvUnsub) loungeScreenRecvUnsub();
+  loungeScreenRecvUnsub = db.collection('rooms').doc(loungeCode).onSnapshot(async doc => {
+    const ss = doc.data()?.screenState || {};
+    if (ss.status === 'broadcasting' && ss.host !== localUsername) {
+      if (loungeScreenRecvPC) return;
+      document.getElementById('loungeScreenPlaceholder').style.display = 'none';
+      document.getElementById('loungeScreenPlayer').style.display = 'block';
+      document.getElementById('loungeScreenLabel').textContent = `@${ss.host}'s Screen`;
+      document.getElementById('loungeScreenLabel').classList.remove('hidden');
+      
+      loungeScreenRecvPC = new RTCPeerConnection(rtcServers);
+      loungeScreenRecvPC.onicecandidate = e => {
+        if (e.candidate && loungeCode) {
+          db.collection('rooms').doc(loungeCode).collection('screenCandidates').add({
+            candidate: e.candidate.toJSON(),
+            sender: localUsername
+          });
+        }
+      };
+      loungeScreenRecvPC.ontrack = e => {
+        document.getElementById('loungeScreenPlayer').srcObject = e.streams[0];
+      };
+      await loungeScreenRecvPC.setRemoteDescription(new RTCSessionDescription(ss.offer));
+      const answer = await loungeScreenRecvPC.createAnswer();
+      await loungeScreenRecvPC.setLocalDescription(answer);
+      await db.collection('rooms').doc(loungeCode).update({
+        'screenState.status': 'broadcasting',
+        'screenState.answer': { sdp: answer.sdp, type: answer.type }
+      });
+      db.collection('rooms').doc(loungeCode).collection('screenCandidates')
+        .where('sender', '!=', localUsername)
+        .onSnapshot(s => {
+          s.docChanges().forEach(change => {
+            if (change.type === 'added') loungeScreenRecvPC.addIceCandidate(new RTCIceCandidate(change.doc.data().candidate));
+          });
+        });
+    } else if (ss.status === 'ended' || !ss.status) {
+      cleanupLoungeScreenReceiver();
+    }
+  });
+}
+
+function cleanupLoungeScreenReceiver() {
+  if (loungeScreenRecvPC) { loungeScreenRecvPC.close(); loungeScreenRecvPC = null; }
+  document.getElementById('loungeScreenPlayer').srcObject = null;
+  document.getElementById('loungeScreenPlayer').style.display = 'none';
+  document.getElementById('loungeScreenPlaceholder').style.display = 'flex';
+  document.getElementById('loungeScreenLabel').classList.add('hidden');
+}
+
+async function exitLoungeWorkspace() {
+  cleanupLoungeOnLeave();
+  loungeCode = null;
+  localStorage.removeItem('together_active_room');
+  document.getElementById('loungeLandingScreen').classList.remove('hidden');
+  document.getElementById('loungeActiveWorkspaceSidebar').classList.add('hidden');
+  showTab('space');
+}
+
+async function cleanupLoungeOnLeave() {
+  if (loungeRoomListener) { loungeRoomListener(); loungeRoomListener = null; }
+  if (loungeMsgListener) { loungeMsgListener(); loungeMsgListener = null; }
+  if (loungeScreenRecvUnsub) { loungeScreenRecvUnsub(); loungeScreenRecvUnsub = null; }
+  leaveLoungeVoiceCall();
+  cleanupLoungeScreenReceiver();
+  if (loungeCode) {
+    db.collection('rooms').doc(loungeCode).update({
+      [`members.${localUsername}`]: firebase.firestore.FieldValue.delete()
+    }).catch(() => {});
+  }
+}
+
+// ── Profile Card Overlay ──────────────────────────────
+let profileData = {};
+let profileSaveTimer = null;
+let currentProfileViewing = null;
+
+function toggleProfileCard(username = localUsername) {
+  const overlay = document.getElementById('profileCardOverlay');
+  if (overlay.classList.contains('active') && currentProfileViewing === username) {
+    closeProfileCard();
+  } else {
+    openProfileCard(username);
+  }
+}
+function openProfileCard(username = localUsername) {
+  currentProfileViewing = username;
+  loadProfileData(username);
+  document.getElementById('profileCardOverlay').classList.add('active');
+}
+function closeProfileCard() {
+  document.getElementById('profileCardOverlay').classList.remove('active');
+  currentProfileViewing = null;
+}
+function handleProfileCardOutsideClick(e) {
+  if (e.target === document.getElementById('profileCardOverlay')) closeProfileCard();
+}
+
+async function loadProfileData(username) {
+  const isMe = (username === localUsername);
+  document.getElementById('pcUsername').textContent = '@' + username;
+  document.getElementById('pcDisplayName').value = '';
+  document.getElementById('pcPronouns').value = '';
+  document.getElementById('pcAbout').value = '';
+  document.getElementById('pcBannerImg').style.display = 'none';
+  setCardAvatarText(username);
+  document.getElementById('profileCard').style.setProperty('--card-primary', '#4f8ef7');
+  document.getElementById('profileCard').style.setProperty('--card-accent', '#7b5ea7');
+  
+  const displayInput = document.getElementById('pcDisplayName');
+  const pronounsInput = document.getElementById('pcPronouns');
+  const aboutInput = document.getElementById('pcAbout');
+  const bannerWrap = document.getElementById('pcBanner');
+  const avatarWrap = document.getElementById('pcAvatarWrap');
+  
+  displayInput.readOnly = !isMe;
+  pronounsInput.readOnly = !isMe;
+  aboutInput.readOnly = !isMe;
+  
+  if (isMe) {
+    bannerWrap.classList.remove('readonly');
+    avatarWrap.classList.remove('readonly');
+    document.getElementById('pcColorsSection').style.display = 'block';
+    document.getElementById('pcActionLogout').style.display = 'flex';
+    document.getElementById('pcActionAddFriend').style.display = 'flex';
+    bannerWrap.onclick = () => document.getElementById('pcBannerInput').click();
+    avatarWrap.onclick = () => document.getElementById('pcAvatarInput').click();
+  } else {
+    bannerWrap.classList.add('readonly');
+    avatarWrap.classList.add('readonly');
+    document.getElementById('pcColorsSection').style.display = 'none';
+    document.getElementById('pcActionLogout').style.display = 'none';
+    document.getElementById('pcActionAddFriend').style.display = 'none';
+    bannerWrap.onclick = null;
+    avatarWrap.onclick = null;
+  }
+
+  try {
+    const doc = await db.collection('users').doc(username).get();
+    const data = doc.exists ? doc.data() : {};
+    if (isMe) profileData = data;
+
+    displayInput.value = data.displayName || username;
+    pronounsInput.value = data.pronouns || '';
+    aboutInput.value = data.about || '';
+    
+    if (data.cardPrimary) {
+      document.getElementById('profileCard').style.setProperty('--card-primary', data.cardPrimary);
+      if (isMe) document.getElementById('pcPrimaryColor').value = data.cardPrimary;
+    }
+    if (data.cardAccent) {
+      document.getElementById('profileCard').style.setProperty('--card-accent', data.cardAccent);
+      if (isMe) document.getElementById('pcAccentColor').value = data.cardAccent;
+    }
+    if (data.avatarDataUrl) {
+      setCardAvatar(data.avatarDataUrl);
+    } else {
+      setCardAvatarText(data.displayName || username);
+    }
+    if (data.bannerDataUrl) {
+      setCardBanner(data.bannerDataUrl);
+    }
+    if (isMe) syncSidebarAvatar(data.avatarDataUrl);
+  } catch(e) {
+    setCardAvatarText(username);
+  }
+}
+
+function updateCardThemeLive() {
+  const primary = document.getElementById('pcPrimaryColor').value;
+  const accent = document.getElementById('pcAccentColor').value;
+  document.getElementById('profileCard').style.setProperty('--card-primary', primary);
+  document.getElementById('profileCard').style.setProperty('--card-accent', accent);
+}
+function setCardAvatar(src) {
+  document.getElementById('pcAvatarImg').src = src;
+  document.getElementById('pcAvatarImg').style.display = 'block';
+  document.getElementById('pcAvatarText').style.display = 'none';
+}
+function setCardAvatarText(name) {
+  document.getElementById('pcAvatarImg').style.display = 'none';
+  document.getElementById('pcAvatarText').style.display = 'flex';
+  document.getElementById('pcAvatarText').textContent = (name || '?').charAt(0).toUpperCase();
+}
+function setCardBanner(src) {
+  document.getElementById('pcBannerImg').src = src;
+  document.getElementById('pcBannerImg').style.display = 'block';
+}
+function syncSidebarAvatar(dataUrl) {
+  const avatar = document.getElementById('localAvatar');
+  if (dataUrl) avatar.innerHTML = `<img src="${dataUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" alt="">`;
+}
+
+function handleAvatarUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const dataUrl = e.target.result;
+    setCardAvatar(dataUrl);
+    syncSidebarAvatar(dataUrl);
+    profileData.avatarDataUrl = dataUrl;
+    saveProfileToFirestore();
+    showToast('Avatar updated!');
+  };
+  reader.readAsDataURL(file);
+}
+function handleBannerUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const dataUrl = e.target.result;
+    setCardBanner(dataUrl);
+    profileData.bannerDataUrl = dataUrl;
+    saveProfileToFirestore();
+    showToast('Banner updated!');
+  };
+  reader.readAsDataURL(file);
+}
+function scheduleProfileSave() {
+  clearTimeout(profileSaveTimer);
+  profileSaveTimer = setTimeout(saveProfileToFirestore, 900);
+}
+async function saveProfileToFirestore() {
+  if (currentProfileViewing !== localUsername) return;
+  const displayName = document.getElementById('pcDisplayName').value.trim() || localDisplayName;
+  const pronouns = document.getElementById('pcPronouns').value.trim();
+  const about = document.getElementById('pcAbout').value.trim();
+  const cardPrimary = document.getElementById('pcPrimaryColor').value;
+  const cardAccent = document.getElementById('pcAccentColor').value;
+
+  const updateData = {
+    displayName, pronouns, about, cardPrimary, cardAccent,
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  };
+  if (profileData.avatarDataUrl) updateData.avatarDataUrl = profileData.avatarDataUrl;
+  if (profileData.bannerDataUrl) updateData.bannerDataUrl = profileData.bannerDataUrl;
+
+  try {
+    await userRef.set(updateData, { merge: true });
+    const pill = document.getElementById('pcSavePill');
+    pill.classList.add('show');
+    setTimeout(() => pill.classList.remove('show'), 1800);
+  } catch(e) { showToast('Error saving profile'); }
+}
+
+function copyProfileUserId() {
+  if (navigator.clipboard && currentProfileViewing) {
+    navigator.clipboard.writeText(currentProfileViewing);
+    showToast('User ID copied!');
+  }
+}
+
+// ── Helpers & Utils ───────────────────────────────────
+function escapeHTML(str) {
+  if (!str) return '';
+  return str.replace(/[&<>'"]/g, tag => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+  }[tag] || tag));
+}
+function openLightbox(url) {
+  document.getElementById('lightboxImg').src = url;
+  document.getElementById('imgLightbox').classList.add('open');
+}
+function closeLightbox() {
+  document.getElementById('imgLightbox').classList.remove('open');
+}
+function copyLoungeCode() {
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(loungeCode);
+    showToast('Room Code Copied!');
+  }
+}
+
+let toastT = null;
+function showToast(msg) {
+  let el = document.getElementById('toastBoxContainer');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'toastBoxContainer';
+    el.className = 'toast-msg';
+    document.body.appendChild(el);
+  }
+  el.innerHTML = `<span>💬</span> ${msg}`;
+  el.classList.add('active');
+  clearTimeout(toastT);
+  toastT = setTimeout(() => el.classList.remove('active'), 3000);
+}
+
+function appendTimeSeparatorDOM(date, container) {
+  const sep = document.createElement('div');
+  sep.className = 'chat-time-separator';
+  sep.textContent = formatSeparatorTime(date);
+  container.appendChild(sep);
+}
+
+function formatSeparatorTime(date) {
+  const now = new Date();
+  const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  if (date.toDateString() === now.toDateString()) return `Today ${timeStr}`;
+  const yesterday = new Date(now);
+  yesterday.setDate(yesterday.getDate() - 1);
+  if (date.toDateString() === yesterday.toDateString()) return `Yesterday ${timeStr}`;
+  return `${date.toLocaleDateString([], { month: 'short', day: 'numeric' })} ${timeStr}`;
+}
+</script>
+</body>
+</html>
