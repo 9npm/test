@@ -204,10 +204,16 @@ html, body {
 .msg-row.recv.tail .msg-bubble { border-bottom-left-radius: 18px; }
 
 /* Timestamp (hover reveal) */
-.msg-time { font-size: 10px; color: var(--text3); padding: 2px 4px; text-align: right; display: none; }
-.msg-row:hover .msg-time { display: block; }
-.msg-row.sent .msg-time { text-align: right; }
-.msg-row.recv .msg-time { text-align: left; }
+.msg-time { display: none !important; }
+.chat-time-separator {
+  text-align: center;
+  font-size: 11px;
+  color: var(--text3);
+  margin: 18px 0 10px 0;
+  font-weight: 500;
+  width: 100%;
+  clear: both;
+}
 
 /* Sender label (lounge only) */
 .msg-sender { font-size: 10.5px; color: var(--text3); margin-bottom: 3px; font-weight: 600; padding: 0 2px; }
@@ -1642,7 +1648,15 @@ function selectFriendChat(username) {
         msgBox.appendChild(pag);
       }
 
-      docs.forEach(data => appendMessageDOM(data, msgBox));
+      let lastTime = null;
+      docs.forEach(data => {
+        const curTime = data.timestamp ? data.timestamp.toDate() : new Date();
+        if (!lastTime || (curTime - lastTime > 15 * 60 * 1000)) {
+          appendTimeSeparatorDOM(curTime, msgBox);
+        }
+        lastTime = curTime;
+        appendMessageDOM(data, msgBox);
+      });
       msgBox.scrollTop = msgBox.scrollHeight;
     });
 }
@@ -1698,11 +1712,6 @@ function renderAttachmentsHTML(attachments, isSent) {
 
 function appendMessageDOM(data, container) {
   const isSent = data.sender === localUsername;
-  let timeStr = '';
-  if (data.timestamp) {
-    timeStr = data.timestamp.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  }
-
   const senderInitial = isSent ? localDisplayName.charAt(0).toUpperCase() : (activeFriend ? activeFriend.displayName.charAt(0).toUpperCase() : '?');
   const senderUser  = isSent ? localUsername : (activeFriend ? activeFriend.username : data.sender);
   const attachHTML = renderAttachmentsHTML(data.attachments, isSent);
@@ -1715,7 +1724,6 @@ function appendMessageDOM(data, container) {
     <div class="msg-group">
       ${attachHTML}
       ${hasText ? `<div class="msg-bubble">${escapeHTML(data.text)}</div>` : ''}
-      <div class="msg-time">${timeStr}</div>
     </div>
   `;
   container.appendChild(row);
@@ -1760,17 +1768,12 @@ function loadOlderDMMessages() {
 
       docs.forEach(data => {
         const isSent = data.sender === localUsername;
-        let timeStr = '';
-        if (data.timestamp) {
-          timeStr = data.timestamp.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        }
         const row = document.createElement('div');
         row.className = `msg-row ${isSent ? 'sent' : 'recv'}`;
         row.innerHTML = `
           <div class="msg-bubble">
             <div class="msg-sender">${isSent ? 'You' : escapeHTML(activeFriend.displayName)}</div>
             <div>${escapeHTML(data.text)}</div>
-            <div class="msg-time">${timeStr}</div>
           </div>
         `;
         // Insert at index 1 (after pagination btn if exists)
@@ -2368,14 +2371,16 @@ function loadLoungeMessages() {
         return;
       }
 
+      let lastTime = null;
       snapshot.forEach(doc => {
         const data = doc.data();
-        const isSelf = data.sender === localUsername;
-        let timeStr = '';
-        if (data.timestamp) {
-          timeStr = data.timestamp.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const curTime = data.timestamp ? data.timestamp.toDate() : new Date();
+        if (!lastTime || (curTime - lastTime > 15 * 60 * 1000)) {
+          appendTimeSeparatorDOM(curTime, msgBox);
         }
+        lastTime = curTime;
 
+        const isSelf = data.sender === localUsername;
         const senderInit = (data.sender || '?').charAt(0).toUpperCase();
         const attachHTML = renderAttachmentsHTML(data.attachments, isSelf);
         const hasText = data.text && data.text.trim();
@@ -2388,7 +2393,6 @@ function loadLoungeMessages() {
             ${!isSelf ? `<div class="msg-sender">@${data.sender}</div>` : ''}
             ${attachHTML}
             ${hasText ? `<div class="msg-bubble">${escapeHTML(data.text)}</div>` : ''}
-            <div class="msg-time">${timeStr}</div>
           </div>
         `;
         msgBox.appendChild(row);
@@ -2747,7 +2751,31 @@ async function cleanupLoungeOnLeave() {
   }
 }
 
-// ── UTILS & FORMATTING ────────────────────────────────
+function appendTimeSeparatorDOM(date, container) {
+  const sep = document.createElement('div');
+  sep.className = 'chat-time-separator';
+  sep.textContent = formatSeparatorTime(date);
+  container.appendChild(sep);
+}
+
+function formatSeparatorTime(date) {
+  const now = new Date();
+  const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  
+  if (date.toDateString() === now.toDateString()) {
+    return `Today ${timeStr}`;
+  }
+  
+  const yesterday = new Date(now);
+  yesterday.setDate(yesterday.getDate() - 1);
+  if (date.toDateString() === yesterday.toDateString()) {
+    return `Yesterday ${timeStr}`;
+  }
+  
+  const options = { month: 'short', day: 'numeric' };
+  return `${date.toLocaleDateString([], options)} ${timeStr}`;
+}
+
 function escapeHTML(str) {
   if (!str) return '';
   return str.replace(/[&<>'"]/g, tag => ({
